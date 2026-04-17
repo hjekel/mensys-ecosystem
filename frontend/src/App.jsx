@@ -6,21 +6,28 @@ import InkopersPage from './pages/InkopersPage.jsx';
 import ResellersPage from './pages/ResellersPage.jsx';
 import StatistiekenPage from './pages/StatistiekenPage.jsx';
 import { loadContacts, saveContacts } from './utils/storage.js';
+import { getResellers, saveResellers } from './store/resellersStore.js';
 import styles from './App.module.css';
 
 export default function App() {
   const [contacts, setContactsState] = useState(() => loadContacts());
+  const [resellers, setResellersState] = useState(() => getResellers());
   const [activeTab, setActiveTab] = useState('welkom');
   const [inkopersFilteredCount, setInkopersFilteredCount] = useState(null);
+  const [resellersFilteredCount, setResellersFilteredCount] = useState(null);
 
   useEffect(() => {
     saveContacts(contacts);
   }, [contacts]);
 
+  useEffect(() => {
+    saveResellers(resellers);
+  }, [resellers]);
+
   const tabs = [
     { id: 'welkom', label: 'Welkom' },
     { id: 'inkopers', label: 'Inkopers', count: inkopersFilteredCount ?? contacts.length },
-    { id: 'resellers', label: 'Resellers' },
+    { id: 'resellers', label: 'Resellers', count: resellersFilteredCount ?? resellers.length },
     { id: 'statistieken', label: 'Statistieken' },
   ];
 
@@ -44,8 +51,16 @@ export default function App() {
             onFilteredCountChange={setInkopersFilteredCount}
           />
         )}
-        {activeTab === 'resellers' && <ResellersPage />}
-        {activeTab === 'statistieken' && <StatistiekenPage contacts={contacts} />}
+        {activeTab === 'resellers' && (
+          <ResellersPage
+            resellers={resellers}
+            setResellers={setResellersState}
+            onFilteredCountChange={setResellersFilteredCount}
+          />
+        )}
+        {activeTab === 'statistieken' && (
+          <StatistiekenPage contacts={contacts} resellers={resellers} />
+        )}
       </main>
 
       <footer className={styles.footer}>

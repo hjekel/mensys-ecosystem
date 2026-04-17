@@ -1,10 +1,20 @@
 import { useMemo, useState } from 'react';
 import styles from './StatistiekenPage.module.css';
-import { SECTORS, FTE_CATEGORIES, STATUSES, SECTOR_COLORS } from '@shared/constants.js';
+import {
+  SECTORS,
+  FTE_CATEGORIES,
+  STATUSES,
+  SECTOR_COLORS,
+  MENSYS_FIT_SCORES,
+  MENSYS_FIT_COLORS,
+  RESELLER_TYPES,
+  RESELLER_STATUSES,
+} from '@shared/constants.js';
 
-export default function StatistiekenPage({ contacts }) {
+export default function StatistiekenPage({ contacts, resellers = [] }) {
   const stats = useMemo(() => computeStats(contacts), [contacts]);
   const jobTitleStats = useMemo(() => computeJobTitles(contacts), [contacts]);
+  const resellerStats = useMemo(() => computeResellerStats(resellers), [resellers]);
 
   return (
     <div className={styles.page}>
@@ -48,6 +58,61 @@ export default function StatistiekenPage({ contacts }) {
       </div>
 
       <JobTitlesCard items={jobTitleStats} />
+
+      <div className={styles.sectionDivider}>
+        <h2 className={styles.sectionTitle}>Resellers</h2>
+      </div>
+
+      <div className={styles.tiles}>
+        <Tile label="Totaal resellers" value={resellerStats.total} />
+        <Tile label="Partners" value={resellerStats.partners} />
+        <Tile label="Met email" value={resellerStats.withEmail} />
+        <Tile
+          label="Email dekking"
+          value={resellerStats.total > 0
+            ? Math.round((resellerStats.withEmail / resellerStats.total) * 100)
+            : 0}
+          suffix="%"
+        />
+      </div>
+
+      {resellerStats.total > 0 && (
+        <div className={styles.emailNote}>
+          {resellerStats.withEmail.toLocaleString('nl-NL')} van {resellerStats.total.toLocaleString('nl-NL')} resellers heeft e-mail ({resellerStats.total > 0 ? Math.round((resellerStats.withEmail / resellerStats.total) * 100) : 0}%)
+        </div>
+      )}
+
+      <div className={styles.grid}>
+        <BarCard
+          title="Verdeling Mensys Fit"
+          items={MENSYS_FIT_SCORES.map((s) => ({
+            label: s,
+            value: resellerStats.byFit[s] || 0,
+            color: MENSYS_FIT_COLORS[s].fg,
+          }))}
+          total={resellerStats.total}
+        />
+
+        <BarCard
+          title="Verdeling Reseller Type"
+          items={RESELLER_TYPES.map((t) => ({
+            label: t,
+            value: resellerStats.byType[t] || 0,
+            color: '#003087',
+          }))}
+          total={resellerStats.total}
+        />
+
+        <BarCard
+          title="Pipeline resellers (per status)"
+          items={RESELLER_STATUSES.map((s) => ({
+            label: s,
+            value: resellerStats.byStatus[s] || 0,
+            color: resellerStatusColor(s),
+          }))}
+          total={resellerStats.total}
+        />
+      </div>
     </div>
   );
 }
@@ -101,10 +166,13 @@ function JobTitlesCard({ items }) {
   );
 }
 
-function Tile({ label, value }) {
+function Tile({ label, value, suffix }) {
   return (
     <div className={styles.tile}>
-      <div className={styles.tileValue}>{value.toLocaleString('nl-NL')}</div>
+      <div className={styles.tileValue}>
+        {value.toLocaleString('nl-NL')}
+        {suffix && <span className={styles.tileSuffix}>{suffix}</span>}
+      </div>
       <div className={styles.tileLabel}>{label}</div>
     </div>
   );
@@ -201,4 +269,38 @@ function statusColor(status) {
     case 'Klant': return '#166534';
     default: return '#6B7280';
   }
+}
+
+function resellerStatusColor(status) {
+  switch (status) {
+    case 'Nieuw': return '#4338CA';
+    case 'Warm': return '#C2410C';
+    case 'Benaderd': return '#854D0E';
+    case 'Gesprek gevoerd': return '#075985';
+    case 'Partner': return '#00a878';
+    default: return '#6B7280';
+  }
+}
+
+function computeResellerStats(resellers) {
+  const byFit = {};
+  const byType = {};
+  const byStatus = {};
+  let partners = 0;
+  let withEmail = 0;
+  for (const r of resellers) {
+    byFit[r.mensysFit] = (byFit[r.mensysFit] || 0) + 1;
+    byType[r.resellerType] = (byType[r.resellerType] || 0) + 1;
+    byStatus[r.status] = (byStatus[r.status] || 0) + 1;
+    if (r.status === 'Partner') partners += 1;
+    if (r.email) withEmail += 1;
+  }
+  return {
+    total: resellers.length,
+    partners,
+    withEmail,
+    byFit,
+    byType,
+    byStatus,
+  };
 }

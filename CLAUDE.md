@@ -129,3 +129,11 @@ npm start        # start backend
 - Reseller tab vullen met data
 - Email template generator vanuit contact
 - LinkedIn outreach tracking
+
+## Resellers tab
+- Store: frontend/src/store/resellersStore.js
+- localStorage key: mensys_resellers
+- Page: frontend/src/pages/ResellersPage.jsx
+- Card: frontend/src/components/ResellerCard.jsx
+- Kanban kolommen: Nieuw | Warm | Benaderd | Gesprek gevoerd | Partner
+- Datastructuur: zie resellersStore.js

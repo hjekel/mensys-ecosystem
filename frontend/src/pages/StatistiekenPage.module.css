@@ -36,6 +36,35 @@
   font-weight: 500;
 }
 
+.tileSuffix {
+  font-size: 20px;
+  font-weight: 600;
+  margin-left: 2px;
+}
+
+.sectionDivider {
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.emailNote {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-blue);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--color-text);
+  box-shadow: var(--shadow-sm);
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));

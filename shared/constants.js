@@ -54,3 +54,57 @@ export const BRAND = {
 
 export const STORAGE_KEY = 'mensys_contacts';
 export const MAX_RECORDS = 5000;
+
+export const RESELLER_STORAGE_KEY = 'mensys_resellers';
+
+export const RESELLER_STATUSES = [
+  'Nieuw',
+  'Warm',
+  'Benaderd',
+  'Gesprek gevoerd',
+  'Partner',
+];
+
+export const RESELLER_TYPES = [
+  'MSP',
+  'Microsoft/Cloud Partner',
+  'Security Reseller',
+  'Implementation Partner',
+  'VAR / IT Reseller',
+  'Nader te bepalen',
+];
+
+export const RESELLER_FTE_RANGES = [
+  '1-10',
+  '11-50',
+  '51-200',
+  '201-500',
+  '500+',
+];
+
+export const MENSYS_FIT_SCORES = ['Hoog', 'Midden', 'Onderzoeken', 'Onbekend'];
+
+export const MENSYS_FIT_COLORS = {
+  Hoog: { bg: '#e6f7f2', fg: '#00a878' },
+  Midden: { bg: '#e8eef7', fg: '#003087' },
+  Onderzoeken: { bg: '#fff3eb', fg: '#E8A020' },
+  Onbekend: { bg: '#f2f5fb', fg: '#5c6a85' },
+};
+
+export const RESELLER_CSV_COLUMNS = {
+  bedrijf: 'bedrijf',
+  voornaam: 'voornaam',
+  achternaam: 'achternaam',
+  functietitel: 'functietitel',
+  email: 'email',
+  linkedin: 'linkedin',
+  fteRange: 'fteRange',
+  resellerType: 'resellerType',
+  mensysFit: 'mensysFit',
+  bron: 'bron',
+  locatie: 'locatie',
+  website: 'website',
+  status: 'status',
+  keywords: 'keywords',
+  notities: 'notities',
+};

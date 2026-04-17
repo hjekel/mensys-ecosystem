@@ -2,12 +2,16 @@ import { useRef, useState } from 'react';
 import Modal from './Modal.jsx';
 import styles from './CSVImportModal.module.css';
 import { parseFile, rowsToContacts } from '../utils/csvParser.js';
+import { rowsToResellers } from '../utils/resellerCsv.js';
 import { mergeContacts } from '../utils/storage.js';
+import { importResellers } from '../store/resellersStore.js';
 import { CSV_COLUMNS } from '@shared/mappings.js';
+import { RESELLER_CSV_COLUMNS } from '@shared/constants.js';
 
-const EXPECTED = Object.values(CSV_COLUMNS);
+const INKOPERS_EXPECTED = Object.values(CSV_COLUMNS);
+const RESELLERS_EXPECTED = Object.values(RESELLER_CSV_COLUMNS);
 
-export default function CSVImportModal({ open, onClose, existing, onImport }) {
+export default function CSVImportModal({ open, mode = 'inkopers', onClose, existing, onImport }) {
   const [stage, setStage] = useState('upload');
   const [fileName, setFileName] = useState('');
   const [headers, setHeaders] = useState([]);
@@ -17,6 +21,11 @@ export default function CSVImportModal({ open, onClose, existing, onImport }) {
   const [dragOver, setDragOver] = useState(false);
   const [result, setResult] = useState(null);
   const fileRef = useRef(null);
+
+  const isResellers = mode === 'resellers';
+  const expected = isResellers ? RESELLERS_EXPECTED : INKOPERS_EXPECTED;
+  const entityLabel = isResellers ? 'resellers' : 'inkopers';
+  const entitySingular = isResellers ? 'reseller' : 'contact';
 
   function reset() {
     setStage('upload');
@@ -54,24 +63,39 @@ export default function CSVImportModal({ open, onClose, existing, onImport }) {
   }
 
   function handleImport() {
-    const contacts = rowsToContacts(rows);
-    const { merged, added, skipped } = mergeContacts(existing, contacts);
-    onImport(merged);
-    setResult({
-      total: contacts.length,
-      added,
-      skipped,
-    });
+    if (isResellers) {
+      const incoming = rowsToResellers(rows);
+      const { merged, added, skipped, total } = importResellers(existing, incoming);
+      onImport(merged);
+      setResult({ total, added, skipped });
+    } else {
+      const contacts = rowsToContacts(rows);
+      const { merged, added, skipped } = mergeContacts(existing, contacts);
+      onImport(merged);
+      setResult({ total: contacts.length, added, skipped });
+    }
     setStage('done');
   }
 
-  const matchedHeaders = headers.filter((h) => EXPECTED.includes(h));
-  const unmatched = headers.filter((h) => !EXPECTED.includes(h));
+  const matchedHeaders = headers.filter((h) =>
+    expected.some((e) => String(e).toLowerCase() === String(h).toLowerCase()),
+  );
+  const unmatched = headers.filter(
+    (h) => !expected.some((e) => String(e).toLowerCase() === String(h).toLowerCase()),
+  );
+
+  const previewRows = isResellers ? rowsToResellers(preview) : rowsToContacts(preview);
+
+  const title = isResellers ? 'Resellers importeren' : 'Inkopers importeren';
+
+  const hint = isResellers
+    ? 'Verwachte kolomnamen: bedrijf, voornaam, achternaam, functietitel, email, linkedin, fteRange, resellerType, mensysFit, bron, locatie, website, status, keywords, notities.'
+    : 'Verwachte kolomnamen: First Name, Last Name, Company, Job Title, LinkedIn URL, Email, LinkedIn Industry, Employee Category, Corporate Website, Location, Country, Source.';
 
   return (
     <Modal
       open={open}
-      title="CSV of Excel importeren"
+      title={title}
       onClose={handleClose}
       size="lg"
     >
@@ -108,11 +132,7 @@ export default function CSVImportModal({ open, onClose, existing, onImport }) {
             />
           </div>
           {error && <div className={styles.error}>{error}</div>}
-          <div className={styles.hint}>
-            Verwachte kolomnamen: First Name, Last Name, Company, Job Title,
-            LinkedIn URL, Email, LinkedIn Industry, Employee Category,
-            Corporate Website, Location, Country, Source.
-          </div>
+          <div className={styles.hint}>{hint}</div>
         </div>
       )}
 
@@ -145,30 +165,57 @@ export default function CSVImportModal({ open, onClose, existing, onImport }) {
 
           <div className={styles.previewLabel}>Preview (eerste 5 rijen)</div>
           <div className={styles.previewTable}>
-            <table>
-              <thead>
-                <tr>
-                  <th>Naam</th>
-                  <th>Functie</th>
-                  <th>Bedrijf</th>
-                  <th>Sector (geraden)</th>
-                  <th>FTE (geraden)</th>
-                  <th>Email</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rowsToContacts(preview).map((c) => (
-                  <tr key={c.id}>
-                    <td>{`${c.firstName} ${c.lastName}`.trim() || '—'}</td>
-                    <td>{c.jobTitle || '—'}</td>
-                    <td>{c.company || '—'}</td>
-                    <td>{c.sector}</td>
-                    <td>{c.fteCategory}</td>
-                    <td>{c.email || '—'}</td>
+            {isResellers ? (
+              <table>
+                <thead>
+                  <tr>
+                    <th>Bedrijf</th>
+                    <th>Naam</th>
+                    <th>Functietitel</th>
+                    <th>Type</th>
+                    <th>Fit</th>
+                    <th>Email</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {previewRows.map((r, i) => (
+                    <tr key={i}>
+                      <td>{r.bedrijf || '-'}</td>
+                      <td>{`${r.voornaam} ${r.achternaam}`.trim() || '-'}</td>
+                      <td>{r.functietitel || '-'}</td>
+                      <td>{r.resellerType}</td>
+                      <td>{r.mensysFit}</td>
+                      <td>{r.email || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <table>
+                <thead>
+                  <tr>
+                    <th>Naam</th>
+                    <th>Functie</th>
+                    <th>Bedrijf</th>
+                    <th>Sector (geraden)</th>
+                    <th>FTE (geraden)</th>
+                    <th>Email</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {previewRows.map((c) => (
+                    <tr key={c.id}>
+                      <td>{`${c.firstName} ${c.lastName}`.trim() || '-'}</td>
+                      <td>{c.jobTitle || '-'}</td>
+                      <td>{c.company || '-'}</td>
+                      <td>{c.sector}</td>
+                      <td>{c.fteCategory}</td>
+                      <td>{c.email || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
 
           <div className={styles.footer}>
@@ -192,7 +239,7 @@ export default function CSVImportModal({ open, onClose, existing, onImport }) {
           </div>
           <h3>Import voltooid</h3>
           <div className={styles.stats}>
-            <div><strong>{result.added}</strong> nieuwe contacten toegevoegd</div>
+            <div><strong>{result.added}</strong> nieuwe {entityLabel} toegevoegd</div>
             <div><strong>{result.skipped}</strong> duplicaten overgeslagen</div>
             <div><strong>{result.total}</strong> rijen verwerkt</div>
           </div>
