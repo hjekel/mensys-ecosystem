@@ -1,0 +1,115 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .tiles { grid-template-columns: repeat(2, 1fr); }
+}
+
+.tile {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 20px 22px;
+  box-shadow: var(--shadow-sm);
+}
+
+.tileValue {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--color-blue);
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.tileLabel {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.cardTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 14px;
+}
+
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.barRow {
+  display: grid;
+  grid-template-columns: 110px 1fr 78px;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.barLabel {
+  color: var(--color-text);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.barTrack {
+  background: var(--color-bg);
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease-out;
+  min-width: 0;
+}
+
+.barValue {
+  color: var(--color-text);
+  font-weight: 600;
+  text-align: right;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.barPct {
+  color: var(--color-text-secondary);
+  font-weight: 400;
+}
+
+.empty {
+  text-align: center;
+  color: var(--color-text-secondary);
+  padding: 20px 0;
+  font-style: italic;
+  font-size: 13px;
+}

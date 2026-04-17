@@ -1,0 +1,80 @@
+.page {
+  display: flex;
+  justify-content: center;
+}
+
+.card {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 40px;
+  max-width: 680px;
+  width: 100%;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.icon {
+  color: var(--color-blue);
+  margin-bottom: 12px;
+}
+
+.card h2 {
+  font-size: 22px;
+  margin-bottom: 8px;
+}
+
+.lead {
+  color: var(--color-text);
+  font-size: 15px;
+  margin: 8px 0;
+  line-height: 1.6;
+}
+
+.sub {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  margin: 0 0 28px;
+}
+
+.roadmap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+  border-top: 1px solid var(--color-border);
+  padding-top: 24px;
+}
+
+.roadmapItem {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.roadmapItem strong {
+  font-size: 14px;
+  color: var(--color-text);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.roadmapItem p {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  margin: 0;
+}
+
+.roadmapStep {
+  background: var(--color-blue);
+  color: var(--color-white);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 13px;
+  flex-shrink: 0;
+}

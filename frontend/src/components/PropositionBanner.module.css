@@ -1,0 +1,26 @@
+.banner {
+  background: var(--color-blue);
+  color: var(--color-white);
+  padding: 18px 24px;
+}
+
+.inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.logo {
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.3px;
+}
+
+.tagline {
+  font-size: 14px;
+  opacity: 0.95;
+  line-height: 1.5;
+}
