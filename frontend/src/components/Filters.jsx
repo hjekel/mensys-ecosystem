@@ -16,7 +16,11 @@ export default function Filters({
   onImportClick,
   onExportClick,
   totalCount,
+  facetCounts,
 }) {
+  const sectorCounts = facetCounts?.sector || {};
+  const fteCounts = facetCounts?.fte || {};
+  const statusCounts = facetCounts?.status || {};
   return (
     <div className={styles.bar}>
       <div className={styles.left}>
@@ -49,7 +53,7 @@ export default function Filters({
         >
           <option value="">Alle sectoren</option>
           {SECTORS.map((s) => (
-            <option key={s} value={s}>{s}</option>
+            <option key={s} value={s}>{s} ({sectorCounts[s] || 0})</option>
           ))}
         </select>
 
@@ -60,7 +64,7 @@ export default function Filters({
         >
           <option value="">Alle FTE</option>
           {FTE_CATEGORIES.map((f) => (
-            <option key={f} value={f}>{f}</option>
+            <option key={f} value={f}>{f} ({fteCounts[f] || 0})</option>
           ))}
         </select>
 
@@ -71,7 +75,7 @@ export default function Filters({
         >
           <option value="">Alle statussen</option>
           {STATUSES.map((s) => (
-            <option key={s} value={s}>{s}</option>
+            <option key={s} value={s}>{s} ({statusCounts[s] || 0})</option>
           ))}
         </select>
 

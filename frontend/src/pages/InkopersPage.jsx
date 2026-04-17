@@ -35,6 +35,34 @@ export default function InkopersPage({ contacts, setContacts }) {
     });
   }, [contacts, query, sector, fte, status]);
 
+  const facetCounts = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    function matchQuery(c) {
+      if (!q) return true;
+      const hay = `${c.firstName || ''} ${c.lastName || ''} ${c.company || ''} ${c.jobTitle || ''}`.toLowerCase();
+      return hay.includes(q);
+    }
+    const sectorCounts = {};
+    const fteCounts = {};
+    const statusCounts = {};
+    contacts.forEach((c) => {
+      if (!matchQuery(c)) return;
+      const passSector = !sector || c.sector === sector;
+      const passFte = !fte || c.fteCategory === fte;
+      const passStatus = !status || c.status === status;
+      if (passFte && passStatus && c.sector) {
+        sectorCounts[c.sector] = (sectorCounts[c.sector] || 0) + 1;
+      }
+      if (passSector && passStatus && c.fteCategory) {
+        fteCounts[c.fteCategory] = (fteCounts[c.fteCategory] || 0) + 1;
+      }
+      if (passSector && passFte && c.status) {
+        statusCounts[c.status] = (statusCounts[c.status] || 0) + 1;
+      }
+    });
+    return { sector: sectorCounts, fte: fteCounts, status: statusCounts };
+  }, [contacts, query, sector, fte, status]);
+
   function handleStatusChange(contact, newStatus) {
     if (contact.status === newStatus) return;
     setContacts((prev) =>
@@ -118,6 +146,7 @@ export default function InkopersPage({ contacts, setContacts }) {
         onImportClick={() => setImportOpen(true)}
         onExportClick={handleExport}
         totalCount={filtered.length}
+        facetCounts={facetCounts}
       />
 
       {contacts.length === 0 ? (
