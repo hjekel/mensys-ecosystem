@@ -42,8 +42,8 @@
   pointer-events: none;
 }
 
-.search {
-  padding-left: 34px;
+.searchWrap .search {
+  padding-left: 36px;
 }
 
 .filterSelect {

@@ -15,6 +15,7 @@ export default function Filters({
   onAddClick,
   onImportClick,
   onExportClick,
+  onCleanupClick,
   totalCount,
   facetCounts,
 }) {
@@ -100,6 +101,9 @@ export default function Filters({
           </button>
         </div>
 
+        <button className="btn btn-ghost" type="button" onClick={onCleanupClick}>
+          Opschonen
+        </button>
         <button className="btn btn-ghost" type="button" onClick={onExportClick}>
           Exporteer CSV
         </button>

@@ -7,6 +7,7 @@ import ContactFormModal from '../components/ContactFormModal.jsx';
 import CSVImportModal from '../components/CSVImportModal.jsx';
 import { contactsToCsv, downloadCsv } from '../utils/csvParser.js';
 import { generateId } from '../utils/storage.js';
+import { applyCleanup, planCleanup } from '../utils/cleanup.js';
 import styles from './InkopersPage.module.css';
 
 export default function InkopersPage({ contacts, setContacts }) {
@@ -129,6 +130,22 @@ export default function InkopersPage({ contacts, setContacts }) {
     downloadCsv(`mensys-inkopers-${stamp}.csv`, csv);
   }
 
+  function handleCleanup() {
+    const { toRemove, toRename } = planCleanup(contacts);
+    if (toRemove.length === 0 && toRename.length === 0) {
+      alert('Geen opschoon-acties nodig. De lijst is schoon.');
+      return;
+    }
+    const msg =
+      `Opschonen:\n` +
+      `  ${toRemove.length} contact(en) verwijderen (gepensioneerd, leeg bedrijf, kale domeinnaam)\n` +
+      `  ${toRename.length} bedrijfsna(a)m(en) normaliseren (Title Case, trimmen, B.V. normalisatie)\n\n` +
+      `Doorgaan?`;
+    if (!confirm(msg)) return;
+    const { cleaned } = applyCleanup(contacts);
+    setContacts(cleaned);
+  }
+
   return (
     <div className={styles.page}>
       <Filters
@@ -145,6 +162,7 @@ export default function InkopersPage({ contacts, setContacts }) {
         onAddClick={handleAdd}
         onImportClick={() => setImportOpen(true)}
         onExportClick={handleExport}
+        onCleanupClick={handleCleanup}
         totalCount={filtered.length}
         facetCounts={facetCounts}
       />
