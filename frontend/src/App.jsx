@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import PropositionBanner from './components/PropositionBanner.jsx';
 import Tabs from './components/Tabs.jsx';
+import WelkomPage from './pages/WelkomPage.jsx';
 import InkopersPage from './pages/InkopersPage.jsx';
 import ResellersPage from './pages/ResellersPage.jsx';
 import StatistiekenPage from './pages/StatistiekenPage.jsx';
@@ -9,7 +10,7 @@ import styles from './App.module.css';
 
 export default function App() {
   const [contacts, setContactsState] = useState(() => loadContacts());
-  const [activeTab, setActiveTab] = useState('inkopers');
+  const [activeTab, setActiveTab] = useState('welkom');
   const [inkopersFilteredCount, setInkopersFilteredCount] = useState(null);
 
   useEffect(() => {
@@ -17,6 +18,7 @@ export default function App() {
   }, [contacts]);
 
   const tabs = [
+    { id: 'welkom', label: 'Welkom' },
     { id: 'inkopers', label: 'Inkopers', count: inkopersFilteredCount ?? contacts.length },
     { id: 'resellers', label: 'Resellers' },
     { id: 'statistieken', label: 'Statistieken' },
@@ -28,6 +30,12 @@ export default function App() {
       <Tabs tabs={tabs} active={activeTab} onChange={setActiveTab} />
 
       <main className={styles.main}>
+        {activeTab === 'welkom' && (
+          <WelkomPage
+            contactCount={contacts.length}
+            onStart={() => setActiveTab('inkopers')}
+          />
+        )}
         {activeTab === 'inkopers' && (
           <InkopersPage
             contacts={contacts}
