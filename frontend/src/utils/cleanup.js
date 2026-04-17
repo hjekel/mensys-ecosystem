@@ -1,8 +1,14 @@
-// Cleanup helpers: detect bogus records and normalise company names.
+// Cleanup helpers: detect bogus records and normalise company and person names.
 
 const TUSSENVOEGSELS = new Set([
   'de', 'der', 'den', 'het', 'van', 'ten', 'ter', "'t", 'op', 'in', 'bij', 'aan',
   'onder', 'over', 'te', 'uit', 'voor', 'tot', 'en', 'of', 'the', 'of', 'a', 'an',
+  'la', 'le', 'du', 'di', 'da',
+]);
+
+const PERSON_NAME_TUSSENVOEGSELS = new Set([
+  'de', 'der', 'den', 'van', 'ten', 'ter', "'t", 'op', 'in', 'bij', 'aan', 'uit',
+  'la', 'le', 'du', 'di', 'da', 'el',
 ]);
 
 const SUFFIX_MAP = {
@@ -63,6 +69,31 @@ function titleCaseWord(word) {
   return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
 }
 
+function titleCaseChunk(chunk) {
+  if (!chunk) return chunk;
+  return chunk.charAt(0).toUpperCase() + chunk.slice(1).toLowerCase();
+}
+
+export function normalisePersonName(raw) {
+  if (!raw) return '';
+  const s = String(raw).replace(/\s+/g, ' ').trim();
+  if (!s) return '';
+  const words = s.split(' ');
+  const fixed = words.map((word, idx) => {
+    if (!word) return word;
+    const lower = word.toLowerCase();
+    if (idx > 0 && PERSON_NAME_TUSSENVOEGSELS.has(lower)) return lower;
+    if (word.includes('-')) {
+      return word.split('-').map(titleCaseChunk).join('-');
+    }
+    if (word.includes("'") && word.length > 2) {
+      return word.split("'").map(titleCaseChunk).join("'");
+    }
+    return titleCaseChunk(word);
+  });
+  return fixed.join(' ');
+}
+
 export function planCleanup(contacts) {
   const toRemove = [];
   const toRename = [];
@@ -71,9 +102,21 @@ export function planCleanup(contacts) {
       toRemove.push(c);
       continue;
     }
-    const next = normaliseCompany(c.company);
-    if (next && next !== (c.company || '')) {
-      toRename.push({ contact: c, next });
+    const changes = {};
+    const nextCompany = normaliseCompany(c.company);
+    if (nextCompany && nextCompany !== (c.company || '')) {
+      changes.company = nextCompany;
+    }
+    const nextFirst = normalisePersonName(c.firstName);
+    if (nextFirst && nextFirst !== (c.firstName || '')) {
+      changes.firstName = nextFirst;
+    }
+    const nextLast = normalisePersonName(c.lastName);
+    if (nextLast && nextLast !== (c.lastName || '')) {
+      changes.lastName = nextLast;
+    }
+    if (Object.keys(changes).length > 0) {
+      toRename.push({ contact: c, changes });
     }
   }
   return { toRemove, toRename };
@@ -82,14 +125,14 @@ export function planCleanup(contacts) {
 export function applyCleanup(contacts) {
   const { toRemove, toRename } = planCleanup(contacts);
   const removeIds = new Set(toRemove.map((c) => c.id));
-  const renameMap = new Map(toRename.map((r) => [r.contact.id, r.next]));
+  const renameMap = new Map(toRename.map((r) => [r.contact.id, r.changes]));
   const nowIso = new Date().toISOString();
   const cleaned = contacts
     .filter((c) => !removeIds.has(c.id))
     .map((c) => {
-      const next = renameMap.get(c.id);
-      if (!next) return c;
-      return { ...c, company: next, updatedAt: nowIso };
+      const changes = renameMap.get(c.id);
+      if (!changes) return c;
+      return { ...c, ...changes, updatedAt: nowIso };
     });
   return { cleaned, removedCount: toRemove.length, renamedCount: toRename.length };
 }

@@ -12,6 +12,7 @@ import {
   updateReseller,
   deleteReseller,
 } from '../store/resellersStore.js';
+import { applyResellerCleanup, planResellerCleanup } from '../utils/resellerCleanup.js';
 import styles from './ResellersPage.module.css';
 
 export default function ResellersPage({ resellers, setResellers, onFilteredCountChange }) {
@@ -138,6 +139,22 @@ export default function ResellersPage({ resellers, setResellers, onFilteredCount
     downloadCsv(`mensys-resellers-${stamp}.csv`, csv);
   }
 
+  function handleCleanup() {
+    const { toRemove, toRename } = planResellerCleanup(resellers);
+    if (toRemove.length === 0 && toRename.length === 0) {
+      alert('Geen opschoon-acties nodig. De lijst is schoon.');
+      return;
+    }
+    const msg =
+      `Opschonen resellers:\n` +
+      `  ${toRemove.length} reseller(s) verwijderen (leeg bedrijf, kale domeinnaam, gepensioneerd)\n` +
+      `  ${toRename.length} naam/naamgeving normaliseren (Title Case voor bedrijf, voornaam en achternaam, B.V. normalisatie, tussenvoegsels)\n\n` +
+      `Doorgaan?`;
+    if (!confirm(msg)) return;
+    const { cleaned } = applyResellerCleanup(resellers);
+    setResellers(cleaned);
+  }
+
   return (
     <div className={styles.page}>
       <ResellerFilters
@@ -156,6 +173,7 @@ export default function ResellersPage({ resellers, setResellers, onFilteredCount
         onAddClick={handleAdd}
         onImportClick={() => setImportOpen(true)}
         onExportClick={handleExport}
+        onCleanupClick={handleCleanup}
         totalCount={filtered.length}
         facetCounts={facetCounts}
       />
