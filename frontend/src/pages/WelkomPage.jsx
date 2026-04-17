@@ -6,7 +6,7 @@ export default function WelkomPage({ contactCount, onStart }) {
       <section className={styles.hero}>
         <h1 className={styles.title}>Welkom bij Mensys Ecosystem</h1>
         <p className={styles.lead}>
-          Interne tool voor Menso en Thomas om procurement managers en software
+          Interne tool voor Mensys om procurement managers en software
           resellers te beheren binnen de Mensys outbound sales pipeline.
           Eén factuur in euro, persoonlijk contact, geen creditcard: dat is het
           aanbod waar we inkopers bij Nederlandse organisaties op benaderen.
