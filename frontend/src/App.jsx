@@ -48,10 +48,29 @@ export default function App() {
       </main>
 
       <footer className={styles.footer}>
-        <span>Mensys Ecosystem App v1.0</span>
+        <span>Mensys Ecosystem App v{__APP_VERSION__}</span>
+        <span className={styles.footerDot}>·</span>
+        <span title={__APP_BUILD_DATE__}>
+          Laatst bijgewerkt: {formatBuildDate(__APP_BUILD_DATE__)}
+        </span>
         <span className={styles.footerDot}>·</span>
         <span>Data opgeslagen in je browser</span>
       </footer>
     </div>
   );
+}
+
+function formatBuildDate(iso) {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString('nl-NL', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return iso;
+  }
 }
