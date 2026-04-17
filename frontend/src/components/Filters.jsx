@@ -1,3 +1,4 @@
+import FilterDropdown from './FilterDropdown.jsx';
 import styles from './Filters.module.css';
 import { SECTORS, FTE_CATEGORIES, STATUSES } from '@shared/constants.js';
 
@@ -10,6 +11,9 @@ export default function Filters({
   onFteChange,
   status,
   onStatusChange,
+  jobTitle,
+  onJobTitleChange,
+  jobTitleOptions,
   view,
   onViewChange,
   onAddClick,
@@ -22,9 +26,15 @@ export default function Filters({
   const sectorCounts = facetCounts?.sector || {};
   const fteCounts = facetCounts?.fte || {};
   const statusCounts = facetCounts?.status || {};
+
+  const sectorOpts = SECTORS.map((s) => ({ value: s, label: s, count: sectorCounts[s] || 0 }));
+  const fteOpts = FTE_CATEGORIES.map((f) => ({ value: f, label: f, count: fteCounts[f] || 0 }));
+  const statusOpts = STATUSES.map((s) => ({ value: s, label: s, count: statusCounts[s] || 0 }));
+  const jobTitleOpts = jobTitleOptions || [];
+
   return (
     <div className={styles.bar}>
-      <div className={styles.left}>
+      <div className={styles.topRow}>
         <div className={styles.searchWrap}>
           <svg
             className={styles.searchIcon}
@@ -47,43 +57,10 @@ export default function Filters({
           />
         </div>
 
-        <select
-          className={`input select ${styles.filterSelect}`}
-          value={sector}
-          onChange={(e) => onSectorChange(e.target.value)}
-        >
-          <option value="">Alle sectoren</option>
-          {SECTORS.map((s) => (
-            <option key={s} value={s}>{s} ({sectorCounts[s] || 0})</option>
-          ))}
-        </select>
-
-        <select
-          className={`input select ${styles.filterSelect}`}
-          value={fte}
-          onChange={(e) => onFteChange(e.target.value)}
-        >
-          <option value="">Alle FTE</option>
-          {FTE_CATEGORIES.map((f) => (
-            <option key={f} value={f}>{f} ({fteCounts[f] || 0})</option>
-          ))}
-        </select>
-
-        <select
-          className={`input select ${styles.filterSelect}`}
-          value={status}
-          onChange={(e) => onStatusChange(e.target.value)}
-        >
-          <option value="">Alle statussen</option>
-          {STATUSES.map((s) => (
-            <option key={s} value={s}>{s} ({statusCounts[s] || 0})</option>
-          ))}
-        </select>
-
         <span className={styles.total}>{totalCount} resultaten</span>
-      </div>
 
-      <div className={styles.right}>
+        <div className={styles.spacer} />
+
         <div className={styles.viewToggle}>
           <button
             type="button"
@@ -113,6 +90,37 @@ export default function Filters({
         <button className="btn btn-accent" type="button" onClick={onAddClick}>
           + Contact toevoegen
         </button>
+      </div>
+
+      <div className={styles.filterGrid}>
+        <div className={styles.filterColumn}>
+          <FilterDropdown
+            allLabel="Alle sectoren"
+            value={sector}
+            onChange={onSectorChange}
+            options={sectorOpts}
+          />
+          <FilterDropdown
+            allLabel="Alle FTE"
+            value={fte}
+            onChange={onFteChange}
+            options={fteOpts}
+          />
+          <FilterDropdown
+            allLabel="Alle statussen"
+            value={status}
+            onChange={onStatusChange}
+            options={statusOpts}
+          />
+        </div>
+        <div className={styles.filterColumn}>
+          <FilterDropdown
+            allLabel="Alle functietitels"
+            value={jobTitle}
+            onChange={onJobTitleChange}
+            options={jobTitleOpts}
+          />
+        </div>
       </div>
     </div>
   );

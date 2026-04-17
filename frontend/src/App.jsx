@@ -10,13 +10,14 @@ import styles from './App.module.css';
 export default function App() {
   const [contacts, setContactsState] = useState(() => loadContacts());
   const [activeTab, setActiveTab] = useState('inkopers');
+  const [inkopersFilteredCount, setInkopersFilteredCount] = useState(null);
 
   useEffect(() => {
     saveContacts(contacts);
   }, [contacts]);
 
   const tabs = [
-    { id: 'inkopers', label: 'Inkopers', count: contacts.length },
+    { id: 'inkopers', label: 'Inkopers', count: inkopersFilteredCount ?? contacts.length },
     { id: 'resellers', label: 'Resellers' },
     { id: 'statistieken', label: 'Statistieken' },
   ];
@@ -28,7 +29,11 @@ export default function App() {
 
       <main className={styles.main}>
         {activeTab === 'inkopers' && (
-          <InkopersPage contacts={contacts} setContacts={setContactsState} />
+          <InkopersPage
+            contacts={contacts}
+            setContacts={setContactsState}
+            onFilteredCountChange={setInkopersFilteredCount}
+          />
         )}
         {activeTab === 'resellers' && <ResellersPage />}
         {activeTab === 'statistieken' && <StatistiekenPage contacts={contacts} />}

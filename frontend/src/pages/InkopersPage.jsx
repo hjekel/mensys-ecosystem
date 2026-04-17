@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Filters from '../components/Filters.jsx';
 import KanbanView from '../components/KanbanView.jsx';
 import ListView from '../components/ListView.jsx';
@@ -10,11 +10,12 @@ import { generateId } from '../utils/storage.js';
 import { applyCleanup, planCleanup } from '../utils/cleanup.js';
 import styles from './InkopersPage.module.css';
 
-export default function InkopersPage({ contacts, setContacts }) {
+export default function InkopersPage({ contacts, setContacts, onFilteredCountChange }) {
   const [query, setQuery] = useState('');
   const [sector, setSector] = useState('');
   const [fte, setFte] = useState('');
   const [status, setStatus] = useState('');
+  const [jobTitle, setJobTitle] = useState('');
   const [view, setView] = useState('kanban');
 
   const [detail, setDetail] = useState(null);
@@ -28,13 +29,18 @@ export default function InkopersPage({ contacts, setContacts }) {
       if (sector && c.sector !== sector) return false;
       if (fte && c.fteCategory !== fte) return false;
       if (status && c.status !== status) return false;
+      if (jobTitle && c.jobTitle !== jobTitle) return false;
       if (q) {
         const hay = `${c.firstName || ''} ${c.lastName || ''} ${c.company || ''} ${c.jobTitle || ''}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     });
-  }, [contacts, query, sector, fte, status]);
+  }, [contacts, query, sector, fte, status, jobTitle]);
+
+  useEffect(() => {
+    if (onFilteredCountChange) onFilteredCountChange(filtered.length);
+  }, [filtered.length, onFilteredCountChange]);
 
   const facetCounts = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -46,23 +52,35 @@ export default function InkopersPage({ contacts, setContacts }) {
     const sectorCounts = {};
     const fteCounts = {};
     const statusCounts = {};
+    const jobTitleCounts = {};
     contacts.forEach((c) => {
       if (!matchQuery(c)) return;
       const passSector = !sector || c.sector === sector;
       const passFte = !fte || c.fteCategory === fte;
       const passStatus = !status || c.status === status;
-      if (passFte && passStatus && c.sector) {
+      const passJobTitle = !jobTitle || c.jobTitle === jobTitle;
+      if (passFte && passStatus && passJobTitle && c.sector) {
         sectorCounts[c.sector] = (sectorCounts[c.sector] || 0) + 1;
       }
-      if (passSector && passStatus && c.fteCategory) {
+      if (passSector && passStatus && passJobTitle && c.fteCategory) {
         fteCounts[c.fteCategory] = (fteCounts[c.fteCategory] || 0) + 1;
       }
-      if (passSector && passFte && c.status) {
+      if (passSector && passFte && passJobTitle && c.status) {
         statusCounts[c.status] = (statusCounts[c.status] || 0) + 1;
       }
+      if (passSector && passFte && passStatus && c.jobTitle) {
+        jobTitleCounts[c.jobTitle] = (jobTitleCounts[c.jobTitle] || 0) + 1;
+      }
     });
-    return { sector: sectorCounts, fte: fteCounts, status: statusCounts };
-  }, [contacts, query, sector, fte, status]);
+    return { sector: sectorCounts, fte: fteCounts, status: statusCounts, jobTitle: jobTitleCounts };
+  }, [contacts, query, sector, fte, status, jobTitle]);
+
+  const jobTitleOptions = useMemo(() => {
+    const counts = facetCounts.jobTitle || {};
+    return Object.entries(counts)
+      .map(([k, v]) => ({ value: k, label: k, count: v }))
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+  }, [facetCounts]);
 
   function handleStatusChange(contact, newStatus) {
     if (contact.status === newStatus) return;
@@ -157,6 +175,9 @@ export default function InkopersPage({ contacts, setContacts }) {
         onFteChange={setFte}
         status={status}
         onStatusChange={setStatus}
+        jobTitle={jobTitle}
+        onJobTitleChange={setJobTitle}
+        jobTitleOptions={jobTitleOptions}
         view={view}
         onViewChange={setView}
         onAddClick={handleAdd}
