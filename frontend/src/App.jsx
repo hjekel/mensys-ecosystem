@@ -34,6 +34,7 @@ export default function App() {
           <WelkomPage
             contactCount={contacts.length}
             onStart={() => setActiveTab('inkopers')}
+            onNavigate={setActiveTab}
           />
         )}
         {activeTab === 'inkopers' && (

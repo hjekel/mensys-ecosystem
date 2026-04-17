@@ -1,6 +1,6 @@
 import styles from './WelkomPage.module.css';
 
-export default function WelkomPage({ contactCount, onStart }) {
+export default function WelkomPage({ contactCount, onStart, onNavigate }) {
   return (
     <div className={styles.page}>
       <section className={styles.hero}>
@@ -80,10 +80,12 @@ export default function WelkomPage({ contactCount, onStart }) {
           <TargetCard
             heading="1. Procurement en inkoopmanagers"
             detail="Nederlandse organisaties met 150 of meer FTE. Sectoren: zorg, overheid, maakindustrie, tech, bouw, finance, onderwijs."
+            onClick={() => onNavigate && onNavigate('inkopers')}
           />
           <TargetCard
             heading="2. Software resellers"
             detail="Nederlandse IT resellers die SaaS tools aan hun klanten aanbieden en op zoek zijn naar een NL distributeur."
+            onClick={() => onNavigate && onNavigate('resellers')}
           />
         </div>
       </section>
@@ -125,11 +127,25 @@ function InfoCard({ title, subtitle, items }) {
   );
 }
 
-function TargetCard({ heading, detail }) {
+function TargetCard({ heading, detail, onClick }) {
   return (
-    <div className={styles.targetCard}>
-      <h3 className={styles.targetHeading}>{heading}</h3>
-      <p className={styles.targetDetail}>{detail}</p>
-    </div>
+    <button type="button" className={styles.targetCard} onClick={onClick}>
+      <span className={styles.targetHeading}>
+        {heading}
+        <svg
+          className={styles.targetArrow}
+          width="14"
+          height="14"
+          viewBox="0 0 14 14"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          aria-hidden="true"
+        >
+          <path d="M3 7h8m0 0l-3-3m3 3l-3 3" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </span>
+      <span className={styles.targetDetail}>{detail}</span>
+    </button>
   );
 }

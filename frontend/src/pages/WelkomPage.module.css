@@ -185,22 +185,51 @@
 }
 
 .targetCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   padding: 16px 18px;
   background: var(--color-bg);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s, transform 0.15s;
+  width: 100%;
+}
+
+.targetCard:hover {
+  border-color: var(--color-blue);
+  background: var(--color-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.targetCard:focus-visible {
+  outline: none;
+  border-color: var(--color-blue);
+  box-shadow: 0 0 0 3px rgba(0, 48, 135, 0.15);
 }
 
 .targetHeading {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 14px;
   font-weight: 600;
   color: var(--color-text);
-  margin-bottom: 6px;
+}
+
+.targetArrow {
+  color: var(--color-blue);
+  transition: transform 0.15s;
+}
+
+.targetCard:hover .targetArrow {
+  transform: translateX(3px);
 }
 
 .targetDetail {
   font-size: 13px;
   color: var(--color-text-secondary);
   line-height: 1.5;
-  margin: 0;
 }
