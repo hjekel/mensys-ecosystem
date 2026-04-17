@@ -113,3 +113,77 @@
   font-style: italic;
   font-size: 13px;
 }
+
+.jobHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.jobHeader .cardTitle {
+  margin-bottom: 0;
+}
+
+.jobSearch {
+  width: 260px;
+  max-width: 100%;
+}
+
+.jobTableWrap {
+  max-height: 480px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.jobTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.jobTable thead {
+  background: var(--color-bg);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.jobTable th {
+  text-align: left;
+  padding: 8px 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.jobTable td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.jobTable tbody tr:hover {
+  background: var(--color-hover);
+}
+
+.jobRank {
+  width: 48px;
+  text-align: right;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.jobCount {
+  width: 100px;
+  text-align: right;
+  font-weight: 600;
+  color: var(--color-blue);
+  font-variant-numeric: tabular-nums;
+}

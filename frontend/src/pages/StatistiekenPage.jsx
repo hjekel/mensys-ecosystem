@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import styles from './StatistiekenPage.module.css';
 import { SECTORS, FTE_CATEGORIES, STATUSES, SECTOR_COLORS } from '@shared/constants.js';
 
 export default function StatistiekenPage({ contacts }) {
   const stats = useMemo(() => computeStats(contacts), [contacts]);
+  const jobTitleStats = useMemo(() => computeJobTitles(contacts), [contacts]);
 
   return (
     <div className={styles.page}>
@@ -45,6 +46,57 @@ export default function StatistiekenPage({ contacts }) {
           total={stats.total}
         />
       </div>
+
+      <JobTitlesCard items={jobTitleStats} />
+    </div>
+  );
+}
+
+function JobTitlesCard({ items }) {
+  const [query, setQuery] = useState('');
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((it) => it.label.toLowerCase().includes(q));
+  }, [items, query]);
+  const totalInList = filtered.reduce((sum, it) => sum + it.value, 0);
+
+  return (
+    <div className={styles.card}>
+      <div className={styles.jobHeader}>
+        <h3 className={styles.cardTitle}>Functietitels ({items.length} unieke, {totalInList.toLocaleString('nl-NL')} contacten)</h3>
+        <input
+          type="text"
+          className={`input ${styles.jobSearch}`}
+          placeholder="Zoek functietitel"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      </div>
+      {filtered.length === 0 ? (
+        <div className={styles.empty}>Geen functietitels gevonden.</div>
+      ) : (
+        <div className={styles.jobTableWrap}>
+          <table className={styles.jobTable}>
+            <thead>
+              <tr>
+                <th className={styles.jobRank}>#</th>
+                <th>Functietitel</th>
+                <th className={styles.jobCount}>Aantal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((it, idx) => (
+                <tr key={it.label}>
+                  <td className={styles.jobRank}>{idx + 1}</td>
+                  <td>{it.label}</td>
+                  <td className={styles.jobCount}>{it.value.toLocaleString('nl-NL')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
@@ -119,6 +171,19 @@ function computeStats(contacts) {
     byFte,
     byStatus,
   };
+}
+
+function computeJobTitles(contacts) {
+  const counts = new Map();
+  for (const c of contacts) {
+    const raw = (c.jobTitle || '').trim();
+    if (!raw) continue;
+    const key = raw;
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+  return [...counts.entries()]
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value || a.label.localeCompare(b.label));
 }
 
 function isNetherlands(country) {

@@ -43,7 +43,7 @@
 }
 
 .searchWrap .search {
-  padding-left: 36px;
+  padding-left: 36px !important;
 }
 
 .filterSelect {

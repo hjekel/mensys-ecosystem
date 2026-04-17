@@ -98,6 +98,25 @@
   text-decoration: none;
 }
 
+.linkedinBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  color: var(--color-white);
+  background: var(--color-blue);
+  font-size: 12px;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+
+.linkedinBtn:hover {
+  background: #00256a;
+  color: var(--color-white);
+  text-decoration: none;
+}
+
 .menuWrap {
   position: relative;
 }
