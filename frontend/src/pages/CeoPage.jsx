@@ -9,6 +9,7 @@ import { ceosToCsv } from '../utils/ceoCsv.js';
 import { downloadCsv } from '../utils/csvParser.js';
 import { addCeo, updateCeo, deleteCeo } from '../store/ceoStore.js';
 import { applyCleanup, planCleanup } from '../utils/cleanup.js';
+import { detectAiTools, hasAiTool } from '../utils/aiTools.js';
 import { CEO_FTE_CATEGORIES } from '@shared/constants.js';
 import listStyles from '../components/ListView.module.css';
 import styles from './InkopersPage.module.css';
@@ -48,6 +49,7 @@ export default function CeoPage({ ceos, setCeos, onFilteredCountChange }) {
   const [fte, setFte] = useState('');
   const [status, setStatus] = useState('');
   const [jobTitle, setJobTitle] = useState('');
+  const [aiTool, setAiTool] = useState('');
   const [view, setView] = useState('kanban');
 
   const [detail, setDetail] = useState(null);
@@ -62,13 +64,14 @@ export default function CeoPage({ ceos, setCeos, onFilteredCountChange }) {
       if (fte && c.fteCategory !== fte) return false;
       if (status && c.status !== status) return false;
       if (jobTitle && c.jobTitle !== jobTitle) return false;
+      if (aiTool && !hasAiTool(c, aiTool)) return false;
       if (q) {
-        const hay = `${c.firstName || ''} ${c.lastName || ''} ${c.company || ''} ${c.jobTitle || ''}`.toLowerCase();
+        const hay = `${c.firstName || ''} ${c.lastName || ''} ${c.company || ''} ${c.jobTitle || ''} ${c.keywords || ''}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     });
-  }, [ceos, query, sector, fte, status, jobTitle]);
+  }, [ceos, query, sector, fte, status, jobTitle, aiTool]);
 
   useEffect(() => {
     if (onFilteredCountChange) onFilteredCountChange(filtered.length);
@@ -83,37 +86,58 @@ export default function CeoPage({ ceos, setCeos, onFilteredCountChange }) {
     const q = query.trim().toLowerCase();
     function matchQuery(c) {
       if (!q) return true;
-      const hay = `${c.firstName || ''} ${c.lastName || ''} ${c.company || ''} ${c.jobTitle || ''}`.toLowerCase();
+      const hay = `${c.firstName || ''} ${c.lastName || ''} ${c.company || ''} ${c.jobTitle || ''} ${c.keywords || ''}`.toLowerCase();
       return hay.includes(q);
     }
     const sectorCounts = {};
     const fteCounts = {};
     const statusCounts = {};
     const jobTitleCounts = {};
+    const aiToolCounts = {};
     ceos.forEach((c) => {
       if (!matchQuery(c)) return;
       const passSector = !sector || c.sector === sector;
       const passFte = !fte || c.fteCategory === fte;
       const passStatus = !status || c.status === status;
       const passJobTitle = !jobTitle || c.jobTitle === jobTitle;
-      if (passFte && passStatus && passJobTitle && c.sector) {
+      const passAiTool = !aiTool || hasAiTool(c, aiTool);
+      if (passFte && passStatus && passJobTitle && passAiTool && c.sector) {
         sectorCounts[c.sector] = (sectorCounts[c.sector] || 0) + 1;
       }
-      if (passSector && passStatus && passJobTitle && c.fteCategory) {
+      if (passSector && passStatus && passJobTitle && passAiTool && c.fteCategory) {
         fteCounts[c.fteCategory] = (fteCounts[c.fteCategory] || 0) + 1;
       }
-      if (passSector && passFte && passJobTitle && c.status) {
+      if (passSector && passFte && passJobTitle && passAiTool && c.status) {
         statusCounts[c.status] = (statusCounts[c.status] || 0) + 1;
       }
-      if (passSector && passFte && passStatus && c.jobTitle) {
+      if (passSector && passFte && passStatus && passAiTool && c.jobTitle) {
         jobTitleCounts[c.jobTitle] = (jobTitleCounts[c.jobTitle] || 0) + 1;
       }
+      if (passSector && passFte && passStatus && passJobTitle) {
+        const tools = detectAiTools(c);
+        for (const t of tools) {
+          aiToolCounts[t] = (aiToolCounts[t] || 0) + 1;
+        }
+      }
     });
-    return { sector: sectorCounts, fte: fteCounts, status: statusCounts, jobTitle: jobTitleCounts };
-  }, [ceos, query, sector, fte, status, jobTitle]);
+    return {
+      sector: sectorCounts,
+      fte: fteCounts,
+      status: statusCounts,
+      jobTitle: jobTitleCounts,
+      aiTool: aiToolCounts,
+    };
+  }, [ceos, query, sector, fte, status, jobTitle, aiTool]);
 
   const jobTitleOptions = useMemo(() => {
     const counts = facetCounts.jobTitle || {};
+    return Object.entries(counts)
+      .map(([k, v]) => ({ value: k, label: k, count: v }))
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+  }, [facetCounts]);
+
+  const aiToolOptions = useMemo(() => {
+    const counts = facetCounts.aiTool || {};
     return Object.entries(counts)
       .map(([k, v]) => ({ value: k, label: k, count: v }))
       .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
@@ -193,6 +217,9 @@ export default function CeoPage({ ceos, setCeos, onFilteredCountChange }) {
         jobTitle={jobTitle}
         onJobTitleChange={setJobTitle}
         jobTitleOptions={jobTitleOptions}
+        aiTool={aiTool}
+        onAiToolChange={setAiTool}
+        aiToolOptions={aiToolOptions}
         view={view}
         onViewChange={setView}
         onAddClick={handleAdd}

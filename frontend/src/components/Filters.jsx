@@ -25,6 +25,9 @@ export default function Filters({
   fteCategories,
   searchPlaceholder,
   addLabel,
+  aiTool,
+  onAiToolChange,
+  aiToolOptions,
 }) {
   const sectorCounts = facetCounts?.sector || {};
   const fteCounts = facetCounts?.fte || {};
@@ -124,6 +127,14 @@ export default function Filters({
             onChange={onJobTitleChange}
             options={jobTitleOpts}
           />
+          {aiToolOptions && onAiToolChange && (
+            <FilterDropdown
+              allLabel="Alle AI-tools"
+              value={aiTool || ''}
+              onChange={onAiToolChange}
+              options={aiToolOptions}
+            />
+          )}
         </div>
       </div>
     </div>
