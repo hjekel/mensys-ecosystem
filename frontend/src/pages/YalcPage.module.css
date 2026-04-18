@@ -137,34 +137,76 @@
 
 .toggle {
   display: inline-flex;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  background: var(--color-white);
+  gap: 6px;
 }
 
 .toggleBtn {
   padding: 8px 14px;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  background: var(--color-white);
-  transition: background 0.15s, color 0.15s;
+  font-weight: 600;
   font-size: 13px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
 
-.toggleBtn + .toggleBtn {
-  border-left: 1px solid var(--color-border);
+/* Inkopers: blauw */
+.toggleInkopers {
+  background: #e8eef7;
+  color: #003087;
+  border-color: #c9d4ea;
 }
 
-.toggleBtn:hover {
-  background: var(--color-hover);
-  color: var(--color-text);
+.toggleInkopers:hover {
+  background: #d6e0f1;
+  border-color: #003087;
 }
 
-.toggleActive,
-.toggleActive:hover {
-  background: var(--color-blue);
+.toggleInkopers.toggleActive,
+.toggleInkopers.toggleActive:hover {
+  background: #003087;
   color: var(--color-white);
+  border-color: #003087;
+  box-shadow: 0 1px 4px rgba(0, 48, 135, 0.25);
+}
+
+/* Resellers: groen */
+.toggleResellers {
+  background: #e6f7f2;
+  color: #00a878;
+  border-color: #b5e8d5;
+}
+
+.toggleResellers:hover {
+  background: #d0f0e5;
+  border-color: #00a878;
+}
+
+.toggleResellers.toggleActive,
+.toggleResellers.toggleActive:hover {
+  background: #00a878;
+  color: var(--color-white);
+  border-color: #00a878;
+  box-shadow: 0 1px 4px rgba(0, 168, 120, 0.25);
+}
+
+/* CEO & MD: amber */
+.toggleCeo {
+  background: #fff3eb;
+  color: #E8A020;
+  border-color: #fde0c0;
+}
+
+.toggleCeo:hover {
+  background: #ffe6d0;
+  border-color: #E8A020;
+}
+
+.toggleCeo.toggleActive,
+.toggleCeo.toggleActive:hover {
+  background: #E8A020;
+  color: var(--color-white);
+  border-color: #E8A020;
+  box-shadow: 0 1px 4px rgba(232, 160, 32, 0.3);
 }
 
 .search {

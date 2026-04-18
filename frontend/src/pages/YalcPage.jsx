@@ -301,21 +301,21 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
         <div className={styles.toggle}>
           <button
             type="button"
-            className={`${styles.toggleBtn} ${source === 'inkopers' ? styles.toggleActive : ''}`}
+            className={`${styles.toggleBtn} ${styles.toggleInkopers} ${source === 'inkopers' ? styles.toggleActive : ''}`}
             onClick={() => handleSourceChange('inkopers')}
           >
             Inkopers ({contacts.length.toLocaleString('nl-NL')})
           </button>
           <button
             type="button"
-            className={`${styles.toggleBtn} ${source === 'resellers' ? styles.toggleActive : ''}`}
+            className={`${styles.toggleBtn} ${styles.toggleResellers} ${source === 'resellers' ? styles.toggleActive : ''}`}
             onClick={() => handleSourceChange('resellers')}
           >
             Resellers ({resellers.length.toLocaleString('nl-NL')})
           </button>
           <button
             type="button"
-            className={`${styles.toggleBtn} ${source === 'ceo' ? styles.toggleActive : ''}`}
+            className={`${styles.toggleBtn} ${styles.toggleCeo} ${source === 'ceo' ? styles.toggleActive : ''}`}
             onClick={() => handleSourceChange('ceo')}
           >
             CEO & MD ({ceos.length.toLocaleString('nl-NL')})
