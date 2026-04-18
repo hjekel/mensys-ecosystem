@@ -163,6 +163,12 @@ export default function OpenerModal({ open, onClose, context, onSaveAsNotitie })
             )}
           </div>
 
+          <div className={styles.helpBlock}>
+            <div><strong>Kopieer naar klembord:</strong> plak in LinkedIn DM.</div>
+            <div><strong>Sla op als notitie:</strong> bewaar in contactdossier.</div>
+            <div><strong>Opnieuw genereren:</strong> vraag een nieuwe versie aan.</div>
+          </div>
+
           <div className={styles.keyFooter}>
             <button type="button" className={styles.linkBtn} onClick={clearKey}>
               API-key verwijderen
