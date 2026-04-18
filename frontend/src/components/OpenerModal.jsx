@@ -1,23 +1,25 @@
 import { useEffect, useState } from 'react';
 import Modal from './Modal.jsx';
-import { generateOpener, getApiKey, setApiKey } from '../utils/anthropic.js';
+import { generateOpenerDual, getApiKey, setApiKey } from '../utils/anthropic.js';
 import styles from './OpenerModal.module.css';
 
 export default function OpenerModal({ open, onClose, context, onSaveAsNotitie }) {
-  const [text, setText] = useState('');
+  const [texts, setTexts] = useState({ nl: '', en: '' });
+  const [errors, setErrors] = useState({ nl: null, en: null });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [activeLang, setActiveLang] = useState('nl');
   const [keyInput, setKeyInput] = useState('');
   const [hasKey, setHasKey] = useState(() => Boolean(getApiKey()));
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState({ nl: false, en: false });
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     if (!open) {
-      setText('');
-      setError('');
-      setCopied(false);
+      setTexts({ nl: '', en: '' });
+      setErrors({ nl: null, en: null });
+      setCopied({ nl: false, en: false });
       setSaved(false);
+      setActiveLang('nl');
       return;
     }
     if (!hasKey) return;
@@ -28,13 +30,15 @@ export default function OpenerModal({ open, onClose, context, onSaveAsNotitie })
 
   async function generate() {
     setLoading(true);
-    setError('');
-    setText('');
+    setErrors({ nl: null, en: null });
+    setTexts({ nl: '', en: '' });
     try {
-      const result = await generateOpener(context);
-      setText(result);
+      const result = await generateOpenerDual(context);
+      setTexts({ nl: result.nl || '', en: result.en || '' });
+      setErrors({ nl: result.nlError, en: result.enError });
     } catch (err) {
-      setError(err.message || 'Onbekende fout');
+      const msg = err.message || 'Onbekende fout';
+      setErrors({ nl: msg, en: msg });
     }
     setLoading(false);
   }
@@ -50,26 +54,37 @@ export default function OpenerModal({ open, onClose, context, onSaveAsNotitie })
   function clearKey() {
     setApiKey('');
     setHasKey(false);
-    setText('');
-    setError('');
+    setTexts({ nl: '', en: '' });
+    setErrors({ nl: null, en: null });
   }
 
-  async function copyText() {
+  async function copyActive() {
+    const text = texts[activeLang];
+    if (!text) return;
     try {
       await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setCopied((c) => ({ ...c, [activeLang]: true }));
+      setTimeout(() => setCopied((c) => ({ ...c, [activeLang]: false })), 2000);
     } catch {
       alert('Kon niet kopieren naar klembord');
     }
   }
 
-  function save() {
-    if (!text.trim() || !onSaveAsNotitie) return;
-    onSaveAsNotitie(text.trim());
+  function saveActiveAsNotitie() {
+    const text = texts[activeLang]?.trim();
+    if (!text || !onSaveAsNotitie) return;
+    const prefix = activeLang === 'nl' ? 'NL: ' : 'EN: ';
+    onSaveAsNotitie(prefix + text);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }
+
+  function updateActive(value) {
+    setTexts((t) => ({ ...t, [activeLang]: value }));
+  }
+
+  const activeText = texts[activeLang];
+  const activeError = errors[activeLang];
 
   return (
     <Modal
@@ -121,21 +136,53 @@ export default function OpenerModal({ open, onClose, context, onSaveAsNotitie })
         </div>
       ) : (
         <>
+          <div className={styles.tabBar}>
+            <button
+              type="button"
+              className={`${styles.tab} ${activeLang === 'nl' ? styles.tabActive : ''}`}
+              onClick={() => setActiveLang('nl')}
+            >
+              Nederlands
+              {errors.nl && <span className={styles.tabDot} title={errors.nl} />}
+            </button>
+            <button
+              type="button"
+              className={`${styles.tab} ${activeLang === 'en' ? styles.tabActive : ''}`}
+              onClick={() => setActiveLang('en')}
+            >
+              English
+              {errors.en && <span className={styles.tabDot} title={errors.en} />}
+            </button>
+          </div>
+          <div className={styles.tabHint}>
+            <strong>Nederlands:</strong> voor Nederlandse contacten.{' '}
+            <strong>English:</strong> voor internationale contacten of als je twijfelt over voorkeur.
+          </div>
+
           <div className={styles.editorWrap}>
             {loading ? (
-              <div className={styles.loading}>Opener wordt geschreven door Claude...</div>
-            ) : error ? (
+              <div className={styles.loading}>
+                Beide versies worden geschreven door Claude (NL en EN parallel)...
+              </div>
+            ) : activeError && !activeText ? (
               <div className={styles.error}>
-                <strong>Fout:</strong> {error}
+                <strong>Fout:</strong> {activeError}
               </div>
             ) : (
-              <textarea
-                className={`input ${styles.editor}`}
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                rows={7}
-                placeholder="Opener verschijnt hier..."
-              />
+              <>
+                <textarea
+                  className={`input ${styles.editor}`}
+                  value={activeText}
+                  onChange={(e) => updateActive(e.target.value)}
+                  rows={7}
+                  placeholder="Opener verschijnt hier..."
+                />
+                {activeError && (
+                  <div className={styles.warnInline}>
+                    Let op: {activeError}
+                  </div>
+                )}
+              </>
             )}
           </div>
 
@@ -146,17 +193,17 @@ export default function OpenerModal({ open, onClose, context, onSaveAsNotitie })
             <button
               type="button"
               className="btn btn-ghost"
-              onClick={copyText}
-              disabled={!text || loading}
+              onClick={copyActive}
+              disabled={!activeText || loading}
             >
-              {copied ? 'Gekopieerd' : 'Kopieer naar klembord'}
+              {copied[activeLang] ? 'Gekopieerd' : `Kopieer ${activeLang === 'nl' ? 'NL' : 'EN'}`}
             </button>
             {onSaveAsNotitie && (
               <button
                 type="button"
                 className="btn btn-primary"
-                onClick={save}
-                disabled={!text || loading}
+                onClick={saveActiveAsNotitie}
+                disabled={!activeText || loading}
               >
                 {saved ? 'Opgeslagen' : 'Sla op als notitie'}
               </button>
@@ -166,7 +213,7 @@ export default function OpenerModal({ open, onClose, context, onSaveAsNotitie })
           <div className={styles.helpBlock}>
             <div><strong>Kopieer naar klembord:</strong> plak in LinkedIn DM.</div>
             <div><strong>Sla op als notitie:</strong> bewaar in contactdossier.</div>
-            <div><strong>Opnieuw genereren:</strong> vraag een nieuwe versie aan.</div>
+            <div><strong>Opnieuw genereren:</strong> vraag nieuwe versies aan (NL en EN tegelijk).</div>
           </div>
 
           <div className={styles.keyFooter}>

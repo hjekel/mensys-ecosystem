@@ -1,18 +1,40 @@
 // Anthropic API client voor de opener-generator.
-// API-key wordt lokaal in localStorage bewaard omdat de app browser-only is.
+// Levert twee versies parallel: Nederlands en Engels.
 
 const API_KEY_STORAGE = 'mensys_anthropic_api_key';
 const API_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = 'claude-sonnet-4-20250514';
 const MAX_TOKENS = 500;
 
-const SYSTEM_PROMPT = `Je bent een outreach-specialist voor Mensys BV in Haarlem. Mensys is een software-licentieleverancier die IT-resellers en procurement managers ontzorgt bij het inkopen van niche-software (ChatGPT Teams, Claude Teams, Figma, Miro, Canva, SketchUp, MAXQDA etc.) op factuur in euro, zonder creditcard, persoonlijk contact.
+const SYSTEM_PROMPT_NL = `Je schrijft een LinkedIn DM voor Mensys BV, een software-licentieleverancier in Haarlem.
+Mensys levert niche-software (ChatGPT Teams, Claude Teams, Figma, Miro, Canva, SketchUp etc.) op factuur in euro. Geen creditcard. Geen USD. Een aanspreekpunt.
 
-Schrijf een kort, persoonlijk LinkedIn DM-bericht van maximaal 3 zinnen. Geen hoi, gebruik 'Beste [naam]'. Geen em-dashes. Geen exclamatiepunten. Geen 'graag', geen 'zou', geen 'wellicht'.
+Schrijf in het Nederlands. Spreektaal, direct, kort, intelligent.
+Drie zinnen. Niet meer.
+Begin met 'Beste [voornaam],'
+Geen aannames over de situatie van de lezer ('bij organisaties als de jouwe' of vergelijkbaar is verboden).
+Geen em-dashes.
+Geen 'vereenvoudigen', 'optimaliseren', 'ontzorgen', 'binnenkort', of andere platgetreden termen.
+Geen lijst van vijf problemen. Kies er een. De scherpste.
+De eerste zin beschrijft een herkenbare situatie vanuit de lezer (niet vanuit Mensys).
+De tweede zin legt het verband met wat Mensys doet.
+De derde zin eindigt met een concrete, lage-drempel vraag. Geen 'even bellen?'. Formuleer als: 'Past een gesprek van 10 minuten?' of vergelijkbaar.
+Schrijf alsof Harry Dry, Rory Sutherland en Alex Hormozi samen een DM schrijven: slim, direct, geen bullshit, je voelt je gezien.`;
 
-Het bericht begint met een haak op het signaal, noemt daarna het concrete Mensys-voordeel dat relevant is voor deze persoon, en eindigt met een concrete vraag of actie.
+const SYSTEM_PROMPT_EN = `You write a LinkedIn DM for Mensys BV, a software licence reseller based in Haarlem, the Netherlands.
+Mensys supplies niche software (ChatGPT Teams, Claude Teams, Figma, Miro, Canva, SketchUp etc.) billed in euro. No credit card. No USD. One point of contact.
 
-Toon: direct, zakelijk, mensgericht. Geen pitch-taal.`;
+Write in English. Spoken tone, direct, short, intelligent.
+Three sentences. No more.
+Start with 'Dear [firstname],'
+No assumptions about the reader's situation ('at organisations like yours' or similar is forbidden).
+No em-dashes.
+No 'simplify', 'optimise', 'streamline', 'soon', or other worn-out buzzwords.
+No list of five problems. Pick one. The sharpest.
+The first sentence describes a recognisable situation from the reader's perspective (not from Mensys's perspective).
+The second sentence connects it to what Mensys does.
+The third sentence ends with a concrete, low-threshold question. No 'quick call?'. Phrase as: 'Would a 10-minute conversation fit?' or similar.
+Write as if Harry Dry, Rory Sutherland and Alex Hormozi wrote a DM together: sharp, direct, no bullshit, the reader feels seen.`;
 
 export function getApiKey() {
   try {
@@ -35,19 +57,17 @@ export function hasApiKey() {
   return Boolean(getApiKey());
 }
 
-export async function generateOpener({ naam, functie, bedrijf, signaal, doelgroep }) {
-  const apiKey = getApiKey();
-  if (!apiKey) {
-    throw new Error('Geen Anthropic API-key ingesteld.');
-  }
-
-  const userMessage =
+function buildUserMessage({ naam, functie, bedrijf, signaal, doelgroep }) {
+  return (
     `Naam: ${naam || '-'}\n` +
     `Functie: ${functie || '-'}\n` +
     `Bedrijf: ${bedrijf || '-'}\n` +
     `Signaal: ${signaal || 'geen signaal beschikbaar'}\n` +
-    `Doelgroep: ${doelgroep || 'inkoper'}`;
+    `Doelgroep: ${doelgroep || 'inkoper'}`
+  );
+}
 
+async function callAnthropic({ apiKey, systemPrompt, userMessage }) {
   const res = await fetch(API_URL, {
     method: 'POST',
     headers: {
@@ -59,7 +79,7 @@ export async function generateOpener({ naam, functie, bedrijf, signaal, doelgroe
     body: JSON.stringify({
       model: MODEL,
       max_tokens: MAX_TOKENS,
-      system: SYSTEM_PROMPT,
+      system: systemPrompt,
       messages: [{ role: 'user', content: userMessage }],
     }),
   });
@@ -80,4 +100,24 @@ export async function generateOpener({ naam, functie, bedrijf, signaal, doelgroe
     ? data.content.map((b) => b.text || '').join('').trim()
     : '';
   return text || '(lege respons)';
+}
+
+export async function generateOpenerDual({ naam, functie, bedrijf, signaal, doelgroep }) {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    throw new Error('Geen Anthropic API-key ingesteld.');
+  }
+  const userMessage = buildUserMessage({ naam, functie, bedrijf, signaal, doelgroep });
+
+  const [nlResult, enResult] = await Promise.allSettled([
+    callAnthropic({ apiKey, systemPrompt: SYSTEM_PROMPT_NL, userMessage }),
+    callAnthropic({ apiKey, systemPrompt: SYSTEM_PROMPT_EN, userMessage }),
+  ]);
+
+  return {
+    nl: nlResult.status === 'fulfilled' ? nlResult.value : '',
+    en: enResult.status === 'fulfilled' ? enResult.value : '',
+    nlError: nlResult.status === 'rejected' ? (nlResult.reason?.message || 'NL-call faalde') : null,
+    enError: enResult.status === 'rejected' ? (enResult.reason?.message || 'EN-call faalde') : null,
+  };
 }
