@@ -21,11 +21,15 @@ const FIELD_ALIASES = {
   country: ['country', 'land', 'company country'],
 };
 
+function normKey(k) {
+  return String(k ?? '').replace(/^\uFEFF/, '').toLowerCase().trim();
+}
+
 function pickValue(row, key) {
   const aliases = FIELD_ALIASES[key] || [key.toLowerCase()];
-  const aliasSet = new Set(aliases.map((a) => a.toLowerCase().trim()));
+  const aliasSet = new Set(aliases.map((a) => String(a).toLowerCase().trim()));
   for (const [k, v] of Object.entries(row)) {
-    if (aliasSet.has(String(k).toLowerCase().trim())) {
+    if (aliasSet.has(normKey(k))) {
       const s = String(v ?? '').trim();
       if (s !== '') return s;
     }
@@ -55,6 +59,15 @@ const MENSYS_FIT_SCORES = ['Hoog', 'Midden', 'Onderzoeken', 'Onbekend'];
 
 export function rowsToCeos(rows) {
   const result = [];
+  if (rows && rows.length > 0) {
+    try {
+      console.log('[ceoCsv] rowsToCeos ontvangen:', rows.length, 'rijen');
+      console.log('[ceoCsv] keys eerste rij:', Object.keys(rows[0]).map(normKey));
+      console.log('[ceoCsv] eerste rij:', rows[0]);
+    } catch {
+      // ignore log failures
+    }
+  }
   for (const row of rows) {
     const bedrijf = pickValue(row, 'bedrijf');
     const voornaam = pickValue(row, 'voornaam');
@@ -90,6 +103,11 @@ export function rowsToCeos(rows) {
       source: pickValue(row, 'bron'),
       keywords: pickValue(row, 'keywords'),
     });
+  }
+  try {
+    console.log('[ceoCsv] rowsToCeos resultaat:', result.length, 'records.', result[0] ? 'Eerste:' : '', result[0] || '');
+  } catch {
+    // ignore
   }
   return result;
 }

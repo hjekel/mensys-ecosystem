@@ -11,11 +11,20 @@ export async function parseFile(file) {
   return parseCsv(file);
 }
 
+function stripBom(value) {
+  if (typeof value !== 'string') return value;
+  return value.replace(/^\uFEFF/, '');
+}
+
 async function parseCsv(file) {
+  const rawText = typeof file === 'string' ? file : await file.text();
+  const text = stripBom(rawText);
   return new Promise((resolve, reject) => {
-    Papa.parse(file, {
+    Papa.parse(text, {
       header: true,
       skipEmptyLines: true,
+      delimitersToGuess: [',', ';', '\t', '|'],
+      transformHeader: (h) => stripBom(String(h || '')).trim(),
       complete: (results) => {
         resolve({
           headers: results.meta.fields || [],

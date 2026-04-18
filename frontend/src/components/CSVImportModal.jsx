@@ -95,6 +95,11 @@ export default function CSVImportModal({ open, mode = 'inkopers', onClose, exist
     } else if (isCeo) {
       const incoming = rowsToCeos(rows);
       const { merged, added, skipped, total } = importCeos(existing, incoming);
+      try {
+        console.log('[CSVImport CEO]', 'rows:', rows.length, 'parsed:', incoming.length, 'added:', added, 'skipped:', skipped, 'total:', total, 'existing before:', existing.length);
+      } catch {
+        // ignore
+      }
       onImport(merged);
       setResult({ total, added, skipped });
     } else {
