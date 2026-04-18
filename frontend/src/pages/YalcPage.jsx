@@ -19,6 +19,7 @@ import { updateReseller, deleteReseller } from '../store/resellersStore.js';
 import { updateCeo, deleteCeo } from '../store/ceoStore.js';
 import { loadSignalen } from '../utils/signaalFetcher.js';
 import { getGewichten } from '../utils/yalcInstellingen.js';
+import { getKlantsignalen } from '../store/klantsignalenStore.js';
 import styles from './YalcPage.module.css';
 
 const BANDS = ['Hot', 'Warm', 'Lauw', 'Koud'];
@@ -220,9 +221,40 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
     }
   }
 
+  const hotSignalen = useMemo(() => {
+    return getKlantsignalen().filter((s) => s.status === 'Signaal');
+  }, [ceos, contacts, resellers]);
+
   return (
     <div className={styles.page}>
       <WeekGoals contacts={contacts} resellers={resellers} />
+
+      {hotSignalen.length > 0 && (
+        <section className={styles.hotSignalenBox}>
+          <div className={styles.hotSignalenHeader}>
+            <span className={styles.hotBadge}>HOT · score 85</span>
+            <strong>Concurrent-klantsignalen</strong>
+            <span className={styles.hotSub}>Bedrijven die momenteel bij een concurrent zitten en ontevreden zijn</span>
+          </div>
+          <ul className={styles.hotSignalenList}>
+            {hotSignalen.map((s) => (
+              <li key={s.id} className={styles.hotSignalItem}>
+                <strong>{s.bedrijfsnaam}</strong> bij {s.concurrent}
+                {s.redenOntevredenheid ? ` · ${s.redenOntevredenheid}` : ''}
+                {s.contactpersoon ? ` · ${s.contactpersoon}` : ''}
+                {s.contactLinkedin && (
+                  <a
+                    href={s.contactLinkedin}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className={styles.hotLink}
+                  >LinkedIn</a>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className={styles.hero}>
         <div className={styles.heroText}>

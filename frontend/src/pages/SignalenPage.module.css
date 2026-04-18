@@ -245,6 +245,18 @@
   background: rgba(0, 48, 135, 0.15);
 }
 
+.chipConcurrent {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .actions {
   display: flex;
   gap: 8px;

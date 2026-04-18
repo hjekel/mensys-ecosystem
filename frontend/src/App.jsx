@@ -8,6 +8,7 @@ import CeoPage from './pages/CeoPage.jsx';
 import SignalenPage from './pages/SignalenPage.jsx';
 import YalcPage from './pages/YalcPage.jsx';
 import EcosysteemPage from './pages/EcosysteemPage.jsx';
+import ConcurrentenPage from './pages/ConcurrentenPage.jsx';
 import StatistiekenPage from './pages/StatistiekenPage.jsx';
 import InstellingenModal from './components/InstellingenModal.jsx';
 import { loadContacts, saveContacts } from './utils/storage.js';
@@ -65,6 +66,7 @@ export default function App() {
     { id: 'ceo', label: 'CEO & MD', count: ceoFilteredCount ?? ceos.length },
     { id: 'yalc', label: 'YALC' },
     { id: 'ecosysteem', label: 'Ecosysteem' },
+    { id: 'concurrenten', label: 'Concurrenten' },
     { id: 'statistieken', label: 'Statistieken' },
   ];
 
@@ -133,6 +135,7 @@ export default function App() {
             setResellers={setResellersState}
           />
         )}
+        {activeTab === 'concurrenten' && <ConcurrentenPage />}
         {activeTab === 'statistieken' && (
           <StatistiekenPage
             contacts={contacts}

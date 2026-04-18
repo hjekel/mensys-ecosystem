@@ -208,6 +208,16 @@ npm start        # start backend
 - Native <details>/<summary> voor expand/collapse
 - Bevat opener-flow uitleg in Dagelijks-blok
 
+## Concurrenten-tab
+- Store concurrenten: frontend/src/store/concurrentenStore.js (localStorage: mensys_concurrenten)
+- Store signalen: frontend/src/store/klantsignalenStore.js (localStorage: mensys_klantsignalen)
+- Page: frontend/src/pages/ConcurrentenPage.jsx
+- Componenten: VerschilMatrix.jsx, KlantSignaalModal.jsx, ConcurrentFormModal.jsx, ConcurrentDetailPanel.jsx
+- Pre-gevuld: 10 concurrenten bij eerste load (Actendo, CloudLand, Protinus IT,
+  Centralpoint, Scholten Awater, SoftwareOne, Crayon, Comparex, Schogo, Vendor-direct)
+- Klantsignalen status 'Signaal' verschijnen in YALC-tab als prioriteit 85
+- SignalenPage toont chip "Concurrent: [naam]" bij match in nieuws
+
 ## Ecosysteem tab
 - Page: frontend/src/pages/EcosysteemPage.jsx
 - SVG radiale visualisatie (geen D3, puur SVG + React) met drie ringen

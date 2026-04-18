@@ -16,6 +16,7 @@ import {
 } from '../utils/signaalFetcher.js';
 import { rankInkopers, rankResellers } from '../utils/lhf.js';
 import { updateReseller, deleteReseller } from '../store/resellersStore.js';
+import { getConcurrenten } from '../store/concurrentenStore.js';
 import styles from './SignalenPage.module.css';
 
 const TYPE_LABELS = {
@@ -58,6 +59,8 @@ export default function SignalenPage({ contacts, setContacts, resellers, setRese
     for (const r of resellers) if (r.bedrijf) list.push(r.bedrijf);
     return Array.from(new Set(list));
   }, [contacts, resellers]);
+
+  const concurrentenList = useMemo(() => getConcurrenten(), []);
 
   async function refresh() {
     if (loading) return;
@@ -323,6 +326,7 @@ export default function SignalenPage({ contacts, setContacts, resellers, setRese
             onCompanyClick={openCompanyDetail}
             onOpenerClick={() => openOpenerForSignal(s)}
             canOpener={(s.gekoppeld || []).length > 0}
+            concurrenten={concurrentenList}
           />
         ))}
       </div>
@@ -359,8 +363,18 @@ export default function SignalenPage({ contacts, setContacts, resellers, setRese
   );
 }
 
-function SignalCard({ signal, onToggleGelezen, onToggleOpgeslagen, onCompanyClick, onOpenerClick, canOpener }) {
+function SignalCard({ signal, onToggleGelezen, onToggleOpgeslagen, onCompanyClick, onOpenerClick, canOpener, concurrenten = [] }) {
   const colors = TYPE_COLORS[signal.type] || TYPE_COLORS.bedrijfsnieuws;
+  const matchedConcurrenten = (() => {
+    const hay = `${signal.titel || ''} ${signal.samenvatting || ''}`.toLowerCase();
+    const hits = [];
+    for (const c of concurrenten) {
+      const naam = String(c.naam || '').trim();
+      if (naam.length < 3) continue;
+      if (hay.includes(naam.toLowerCase())) hits.push(naam);
+    }
+    return hits;
+  })();
   return (
     <article className={`${styles.card} ${signal.gelezen ? styles.cardRead : ''}`}>
       <div className={styles.cardHeader}>
@@ -395,6 +409,14 @@ function SignalCard({ signal, onToggleGelezen, onToggleOpgeslagen, onCompanyClic
             >
               {c}
             </button>
+          ))}
+        </div>
+      )}
+      {matchedConcurrenten.length > 0 && (
+        <div className={styles.chips}>
+          <span className={styles.chipsLabel}>Concurrent:</span>
+          {matchedConcurrenten.map((c) => (
+            <span key={c} className={styles.chipConcurrent}>{c}</span>
           ))}
         </div>
       )}
