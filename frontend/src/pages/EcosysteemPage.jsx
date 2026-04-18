@@ -153,9 +153,31 @@ export default function EcosysteemPage({ contacts, setContacts, resellers, setRe
     setDetailSource(null);
   }
 
-  const fitOptions = MENSYS_FIT_SCORES.map((s) => ({ value: s, label: s, count: 0 }));
-  const sectorOptions = SECTORS.map((s) => ({ value: s, label: s, count: 0 }));
-  const statusOptions = STATUSES.map((s) => ({ value: s, label: s, count: 0 }));
+  const sectorCountsMap = useMemo(() => {
+    const m = {};
+    for (const c of contacts) if (c.sector) m[c.sector] = (m[c.sector] || 0) + 1;
+    return m;
+  }, [contacts]);
+
+  const statusCountsMap = useMemo(() => {
+    const m = {};
+    for (const c of contacts) if (c.status) m[c.status] = (m[c.status] || 0) + 1;
+    for (const r of resellers) if (r.status) m[r.status] = (m[r.status] || 0) + 1;
+    return m;
+  }, [contacts, resellers]);
+
+  const sectorOptions = SECTORS.map((s) => ({
+    value: s,
+    label: s,
+    count: sectorCountsMap[s] || 0,
+  }));
+  const statusOptions = STATUSES.map((s) => ({
+    value: s,
+    label: s,
+    count: statusCountsMap[s] || 0,
+  }));
+
+  const TOP_RESELLER_LABEL_COUNT = 10;
 
   return (
     <div className={styles.page}>
@@ -200,33 +222,23 @@ export default function EcosysteemPage({ contacts, setContacts, resellers, setRe
         </span>
       </section>
 
-      <section className={styles.legend}>
-        <h3 className={styles.legendTitle}>Legenda</h3>
-        <div className={styles.legendRow}>
-          <span className={styles.legendLabel}>Mensys Fit:</span>
-          {MENSYS_FIT_SCORES.map((s) => {
-            const c = MENSYS_FIT_COLORS[s];
-            return (
-              <span key={s} className={styles.legendItem}>
-                <span className={styles.swatch} style={{ background: c.fg }} />
-                {s}
-              </span>
-            );
-          })}
-        </div>
-        <div className={styles.legendRow}>
-          <span className={styles.legendLabel}>Sector:</span>
-          {SECTORS.map((s) => (
-            <span key={s} className={styles.legendItem}>
-              <span className={styles.swatch} style={{ background: SECTOR_COLORS[s] }} />
-              {s}
-            </span>
-          ))}
-        </div>
-      </section>
-
       <div className={styles.graphWrap}>
         <svg viewBox="-560 -560 1120 1120" className={styles.svg}>
+          <defs>
+            <filter id="mensys-shadow" x="-50%" y="-50%" width="200%" height="200%">
+              <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#003087" floodOpacity="0.25" />
+            </filter>
+            <filter id="node-shadow" x="-50%" y="-50%" width="200%" height="200%">
+              <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#000" floodOpacity="0.12" />
+            </filter>
+          </defs>
+
+          <rect x="-560" y="-560" width="1120" height="1120" fill="#FAFAF8" />
+
+          <text x="0" y="-510" textAnchor="middle" className={styles.graphTitle}>
+            Mensys Ecosysteem — NL Markt
+          </text>
+
           <circle cx="0" cy="0" r={RING_R.distributeurs} className={styles.ring} />
           <circle cx="0" cy="0" r={RING_R.resellers} className={styles.ring} />
           <circle cx="0" cy="0" r={RING_R.inkopers} className={styles.ring} />
@@ -249,7 +261,7 @@ export default function EcosysteemPage({ contacts, setContacts, resellers, setRe
                 y1="0"
                 x2={n.x}
                 y2={n.y}
-                className={styles.linkThin}
+                className={styles.linkReseller}
               />
             ))}
             {inkoperNodes.map((n) => (
@@ -259,14 +271,13 @@ export default function EcosysteemPage({ contacts, setContacts, resellers, setRe
                 y1="0"
                 x2={n.x}
                 y2={n.y}
-                className={styles.linkThin}
-                opacity="0.5"
+                className={styles.linkInkoper}
               />
             ))}
           </g>
 
-          <g>
-            <circle cx="0" cy="0" r="48" fill="#003087" />
+          <g filter="url(#mensys-shadow)">
+            <circle cx="0" cy="0" r="60" fill="#003087" stroke="#ffffff" strokeWidth="3" />
             <text
               x="0"
               y="0"
@@ -276,10 +287,10 @@ export default function EcosysteemPage({ contacts, setContacts, resellers, setRe
             >
               M
             </text>
-            <text x="0" y="64" textAnchor="middle" className={styles.nodeName}>
-              Mensys
-            </text>
           </g>
+          <text x="0" y="82" textAnchor="middle" className={styles.nodeName}>
+            Mensys
+          </text>
 
           {distribNodes.map((n) => (
             <NodeG
@@ -289,12 +300,13 @@ export default function EcosysteemPage({ contacts, setContacts, resellers, setRe
               onClick={openNode}
             />
           ))}
-          {resellerNodes.map((n) => (
+          {resellerNodes.map((n, idx) => (
             <NodeG
               key={n.id}
               node={n}
               onHover={setHover}
               onClick={openNode}
+              showLabel={idx < TOP_RESELLER_LABEL_COUNT}
             />
           ))}
           {inkoperNodes.map((n) => (
@@ -306,6 +318,30 @@ export default function EcosysteemPage({ contacts, setContacts, resellers, setRe
             />
           ))}
         </svg>
+
+        <div className={styles.legendCard}>
+          <div className={styles.legendRow}>
+            <span className={styles.legendLabel}>Mensys Fit</span>
+            {MENSYS_FIT_SCORES.map((s) => {
+              const c = MENSYS_FIT_COLORS[s];
+              return (
+                <span key={s} className={styles.legendItem}>
+                  <span className={styles.swatch} style={{ background: c.fg }} />
+                  {s}
+                </span>
+              );
+            })}
+          </div>
+          <div className={styles.legendRow}>
+            <span className={styles.legendLabel}>Sector</span>
+            {SECTORS.map((s) => (
+              <span key={s} className={styles.legendItem}>
+                <span className={styles.swatch} style={{ background: SECTOR_COLORS[s] }} />
+                {s}
+              </span>
+            ))}
+          </div>
+        </div>
 
         {hover && (
           <div className={styles.tooltip}>
@@ -411,18 +447,54 @@ export default function EcosysteemPage({ contacts, setContacts, resellers, setRe
   );
 }
 
-function NodeG({ node, onHover, onClick }) {
+function NodeG({ node, onHover, onClick, showLabel }) {
+  if (node.type === 'distributeur') {
+    const size = 42;
+    const half = size / 2;
+    return (
+      <g
+        className={styles.nodeDistrib}
+        onMouseEnter={() => onHover(node)}
+        onMouseLeave={() => onHover(null)}
+        onClick={() => onClick(node)}
+      >
+        <rect
+          x={node.x - half}
+          y={node.y - half}
+          width={size}
+          height={size}
+          rx="8"
+          ry="8"
+          fill={node.color}
+          stroke="#ffffff"
+          strokeWidth="2"
+          filter="url(#node-shadow)"
+        />
+        <text x={node.x} y={node.y + half + 14} textAnchor="middle" className={styles.distribLabel}>
+          {node.name}
+        </text>
+      </g>
+    );
+  }
+  const truncatedLabel = showLabel && node.name
+    ? (node.name.length > 12 ? node.name.slice(0, 11) + '…' : node.name)
+    : null;
   return (
     <g
-      className={node.type === 'distributeur' ? styles.nodeDistrib : styles.nodeInteractive}
+      className={styles.nodeInteractive}
       onMouseEnter={() => onHover(node)}
       onMouseLeave={() => onHover(null)}
       onClick={() => onClick(node)}
     >
-      <circle cx={node.x} cy={node.y} r={node.r} fill={node.color} stroke="#ffffff" strokeWidth="1.5" />
-      {node.type === 'distributeur' && (
-        <text x={node.x} y={node.y + node.r + 14} textAnchor="middle" className={styles.distribLabel}>
-          {node.name}
+      <circle cx={node.x} cy={node.y} r={node.r} fill={node.color} stroke="#ffffff" strokeWidth="2" />
+      {truncatedLabel && (
+        <text
+          x={node.x}
+          y={node.y + node.r + 10}
+          textAnchor="middle"
+          className={styles.resellerLabel}
+        >
+          {truncatedLabel}
         </text>
       )}
     </g>

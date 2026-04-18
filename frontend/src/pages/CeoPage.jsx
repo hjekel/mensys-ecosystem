@@ -10,7 +10,37 @@ import { downloadCsv } from '../utils/csvParser.js';
 import { addCeo, updateCeo, deleteCeo } from '../store/ceoStore.js';
 import { applyCleanup, planCleanup } from '../utils/cleanup.js';
 import { CEO_FTE_CATEGORIES } from '@shared/constants.js';
+import listStyles from '../components/ListView.module.css';
 import styles from './InkopersPage.module.css';
+
+function resolveLand(c) {
+  const existing = (c.country || '').trim();
+  if (existing) {
+    const low = existing.toLowerCase();
+    if (low === 'netherlands' || low === 'the netherlands' || low === 'nederland' || low === 'nl') return 'NL';
+    if (low === 'belgium' || low === 'belgie' || low === 'belgië' || low === 'be') return 'BE';
+    return existing.length > 15 ? existing.slice(0, 14) + '…' : existing;
+  }
+  const loc = String(c.locatie || c.location || '').trim();
+  if (!loc) return '';
+  const lower = loc.toLowerCase();
+  if (lower.includes('netherlands') || lower.includes('nederland')) return 'NL';
+  if (lower.includes('belgium') || lower.includes('belgië') || lower.includes('belgie')) return 'BE';
+  if (lower.includes('germany') || lower.includes('duitsland')) return 'DE';
+  if (lower.includes('france') || lower.includes('frankrijk')) return 'FR';
+  if (lower.includes('united kingdom') || lower.includes('england') || lower.includes('uk')) return 'UK';
+  if (lower.includes('united states') || lower.includes('usa') || lower.includes(', us')) return 'US';
+  return loc.length > 15 ? loc.slice(0, 14) + '…' : loc;
+}
+
+function isFirstDegree(c) {
+  const src = String(c?.source || c?.bron || '').toLowerCase();
+  return src.includes('1st degree') || src.includes('1e graads');
+}
+
+function FirstDegreeBadge() {
+  return <span className={listStyles.firstDegreeBadge}>1e graads</span>;
+}
 
 export default function CeoPage({ ceos, setCeos, onFilteredCountChange }) {
   const [query, setQuery] = useState('');
@@ -43,6 +73,11 @@ export default function CeoPage({ ceos, setCeos, onFilteredCountChange }) {
   useEffect(() => {
     if (onFilteredCountChange) onFilteredCountChange(filtered.length);
   }, [filtered.length, onFilteredCountChange]);
+
+  const viewContacts = useMemo(
+    () => filtered.map((c) => ({ ...c, country: resolveLand(c) })),
+    [filtered],
+  );
 
   const facetCounts = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -183,10 +218,11 @@ export default function CeoPage({ ceos, setCeos, onFilteredCountChange }) {
         />
       ) : (
         <ListView
-          contacts={filtered}
+          contacts={viewContacts}
           onOpen={setDetail}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          badgeForContact={(c) => (isFirstDegree(c) ? <FirstDegreeBadge /> : null)}
         />
       )}
 

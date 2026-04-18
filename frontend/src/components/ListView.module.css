@@ -88,6 +88,34 @@
   padding-right: 12px;
 }
 
+.nameInline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.firstDegreeBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #e6f7f2;
+  color: #00a878;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.firstDegreeBadge::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #00a878;
+}
+
 .actions {
   white-space: nowrap;
   text-align: right;

@@ -13,7 +13,7 @@ const COLUMNS = [
   { key: 'linkedinUrl', label: 'LinkedIn', sortable: false },
 ];
 
-export default function ListView({ contacts, onOpen }) {
+export default function ListView({ contacts, onOpen, badgeForContact }) {
   const [sortKey, setSortKey] = useState('company');
   const [sortDir, setSortDir] = useState('asc');
 
@@ -74,7 +74,12 @@ export default function ListView({ contacts, onOpen }) {
               <td><SectorBadge sector={c.sector} /></td>
               <td className={styles.dim}>{c.fteCategory || ''}</td>
               <td className={styles.nameCell}>{c.company || ''}</td>
-              <td>{c.firstName || ''}</td>
+              <td>
+                <span className={styles.nameInline}>
+                  <span>{c.firstName || ''}</span>
+                  {badgeForContact ? badgeForContact(c) : null}
+                </span>
+              </td>
               <td>{c.lastName || ''}</td>
               <td className={styles.dim}>{c.jobTitle || ''}</td>
               <td onClick={(e) => e.stopPropagation()}>

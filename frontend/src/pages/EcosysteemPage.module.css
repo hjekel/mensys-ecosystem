@@ -91,6 +91,48 @@
   margin-bottom: 8px;
 }
 
+.legendCard {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: 10px 12px;
+  font-size: 11px;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.graphTitle {
+  fill: var(--color-text);
+  font-size: 22px;
+  font-weight: 700;
+  font-family: inherit;
+  letter-spacing: 0.3px;
+}
+
+.resellerLabel {
+  fill: var(--color-text);
+  font-size: 9px;
+  font-weight: 600;
+  font-family: inherit;
+  pointer-events: none;
+}
+
+.linkReseller {
+  stroke: rgba(0, 48, 135, 0.2);
+  stroke-width: 0.5;
+}
+
+.linkInkoper {
+  stroke: rgba(0, 0, 0, 0.12);
+  stroke-width: 0.5;
+}
+
 .legendRow {
   display: flex;
   flex-wrap: wrap;
@@ -120,7 +162,7 @@
 }
 
 .graphWrap {
-  background: var(--color-white);
+  background: #FAFAF8;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);

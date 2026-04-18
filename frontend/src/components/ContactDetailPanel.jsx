@@ -55,6 +55,13 @@ export default function ContactDetailPanel({
           )}
         </div>
 
+        {isFirstDegree(contact) && (
+          <div className={styles.warmConnection}>
+            <span className={styles.warmDot} />
+            Warme connectie — 1e graads LinkedIn
+          </div>
+        )}
+
         <div className={styles.section}>
           <label className={styles.label}>Status</label>
           <div className={styles.statusRow}>
@@ -149,4 +156,9 @@ function priorityClass(p) {
   if (p === 'Hoog') return styles.priorityHigh;
   if (p === 'Laag') return styles.priorityLow;
   return styles.priorityMid;
+}
+
+function isFirstDegree(c) {
+  const src = String(c?.source || c?.bron || '').toLowerCase();
+  return src.includes('1st degree') || src.includes('1e graads');
 }

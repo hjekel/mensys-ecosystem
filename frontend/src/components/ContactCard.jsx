@@ -26,12 +26,20 @@ export default function ContactCard({
   }, [menuOpen]);
 
   const fullName = `${contact.firstName || ''} ${contact.lastName || ''}`.trim() || '(naamloos)';
+  const firstDegree = String(contact.source || contact.bron || '').toLowerCase().includes('1st degree')
+    || String(contact.source || contact.bron || '').toLowerCase().includes('1e graads');
 
   return (
     <div className={styles.card} onClick={() => onOpen(contact)}>
       <div className={styles.topRow} {...(dragHandleProps || {})}>
         <div className={styles.nameBlock}>
           <div className={styles.name}>{fullName}</div>
+          {firstDegree && (
+            <div className={styles.firstDegree}>
+              <span className={styles.firstDegreeDot} />
+              1e graads
+            </div>
+          )}
           {contact.jobTitle && (
             <div className={styles.title}>{contact.jobTitle}</div>
           )}
