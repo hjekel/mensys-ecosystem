@@ -136,21 +136,25 @@ export default function OpenerModal({ open, onClose, context, onSaveAsNotitie })
         </div>
       ) : (
         <>
-          <div className={styles.tabBar}>
+          <div className={styles.langTabs}>
             <button
               type="button"
-              className={`${styles.tab} ${activeLang === 'nl' ? styles.tabActive : ''}`}
+              className={`${styles.langTab} ${activeLang === 'nl' ? styles.langTabActive : ''}`}
               onClick={() => setActiveLang('nl')}
+              aria-pressed={activeLang === 'nl'}
             >
-              Nederlands
+              <FlagNL />
+              <span>Nederlands</span>
               {errors.nl && <span className={styles.tabDot} title={errors.nl} />}
             </button>
             <button
               type="button"
-              className={`${styles.tab} ${activeLang === 'en' ? styles.tabActive : ''}`}
+              className={`${styles.langTab} ${activeLang === 'en' ? styles.langTabActive : ''}`}
               onClick={() => setActiveLang('en')}
+              aria-pressed={activeLang === 'en'}
             >
-              English
+              <FlagGB />
+              <span>English</span>
               {errors.en && <span className={styles.tabDot} title={errors.en} />}
             </button>
           </div>
@@ -224,5 +228,38 @@ export default function OpenerModal({ open, onClose, context, onSaveAsNotitie })
         </>
       )}
     </Modal>
+  );
+}
+
+function FlagNL() {
+  return (
+    <svg viewBox="0 0 9 6" width="20" height="14" className={styles.flag} aria-hidden="true">
+      <rect width="9" height="2" fill="#AE1C28" />
+      <rect y="2" width="9" height="2" fill="#FFFFFF" />
+      <rect y="4" width="9" height="2" fill="#21468B" />
+      <rect x="0.25" y="0.25" width="8.5" height="5.5" fill="none" stroke="rgba(0,0,0,0.08)" strokeWidth="0.5" />
+    </svg>
+  );
+}
+
+function FlagGB() {
+  return (
+    <svg viewBox="0 0 60 30" width="20" height="14" className={styles.flag} aria-hidden="true">
+      <clipPath id="gb-clip">
+        <path d="M0 0 v30 h60 v-30 z" />
+      </clipPath>
+      <path d="M0 0 v30 h60 v-30 z" fill="#012169" />
+      <path d="M0 0 L60 30 M60 0 L0 30" stroke="#FFFFFF" strokeWidth="6" clipPath="url(#gb-clip)" />
+      <path
+        d="M0 0 L60 30 M60 0 L0 30"
+        stroke="#C8102E"
+        strokeWidth="4"
+        clipPath="url(#gb-clip)"
+        strokeDasharray="30 30"
+        strokeDashoffset="0"
+      />
+      <path d="M30 0 v30 M0 15 h60" stroke="#FFFFFF" strokeWidth="10" />
+      <path d="M30 0 v30 M0 15 h60" stroke="#C8102E" strokeWidth="6" />
+    </svg>
   );
 }
