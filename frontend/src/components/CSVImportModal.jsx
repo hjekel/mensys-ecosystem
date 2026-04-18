@@ -12,6 +12,23 @@ import { RESELLER_CSV_COLUMNS } from '@shared/constants.js';
 
 const INKOPERS_EXPECTED = Object.values(CSV_COLUMNS);
 const RESELLERS_EXPECTED = Object.values(RESELLER_CSV_COLUMNS);
+const CEO_EXPECTED = [
+  'bedrijf',
+  'voornaam',
+  'achternaam',
+  'functietitel',
+  'email',
+  'linkedin',
+  'fteCategorie',
+  'sector',
+  'status',
+  'mensysFit',
+  'bron',
+  'locatie',
+  'website',
+  'keywords',
+  'notities',
+];
 
 export default function CSVImportModal({ open, mode = 'inkopers', onClose, existing, onImport }) {
   const [stage, setStage] = useState('upload');
@@ -26,7 +43,11 @@ export default function CSVImportModal({ open, mode = 'inkopers', onClose, exist
 
   const isResellers = mode === 'resellers';
   const isCeo = mode === 'ceo';
-  const expected = isResellers ? RESELLERS_EXPECTED : INKOPERS_EXPECTED;
+  const expected = isResellers
+    ? RESELLERS_EXPECTED
+    : isCeo
+      ? CEO_EXPECTED
+      : INKOPERS_EXPECTED;
   const entityLabel = isResellers ? 'resellers' : isCeo ? 'CEOs' : 'inkopers';
   const entitySingular = isResellers ? 'reseller' : isCeo ? 'CEO' : 'contact';
 
@@ -106,7 +127,9 @@ export default function CSVImportModal({ open, mode = 'inkopers', onClose, exist
 
   const hint = isResellers
     ? 'Verwachte kolomnamen: bedrijf, voornaam, achternaam, functietitel, email, linkedin, fteRange, resellerType, mensysFit, bron, locatie, website, status, keywords, notities.'
-    : 'Verwachte kolomnamen: First Name, Last Name, Company, Job Title, LinkedIn URL, Email, LinkedIn Industry, Employee Category, Corporate Website, Location, Country, Source.';
+    : isCeo
+      ? 'Verwachte kolomnamen: bedrijf, voornaam, achternaam, functietitel, email, linkedin, fteCategorie, sector, status, mensysFit, bron, locatie, website, keywords, notities. Hoofdletters/kleine letters worden beide geaccepteerd.'
+      : 'Verwachte kolomnamen: First Name, Last Name, Company, Job Title, LinkedIn URL, Email, LinkedIn Industry, Employee Category, Corporate Website, Location, Country, Source.';
 
   return (
     <Modal
