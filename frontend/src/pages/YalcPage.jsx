@@ -1,4 +1,7 @@
 import { useMemo, useState } from 'react';
+import FilterDropdown from '../components/FilterDropdown.jsx';
+import ContactDetailPanel from '../components/ContactDetailPanel.jsx';
+import ResellerDetailPanel from '../components/ResellerDetailPanel.jsx';
 import {
   rankInkopers,
   rankResellers,
@@ -7,34 +10,51 @@ import {
 } from '../utils/lhf.js';
 import { contactsToCsv, downloadCsv } from '../utils/csvParser.js';
 import { resellersToCsv } from '../utils/resellerCsv.js';
+import { updateReseller, deleteReseller } from '../store/resellersStore.js';
 import styles from './YalcPage.module.css';
 
-export default function YalcPage({ contacts, resellers }) {
+const BANDS = ['Hot', 'Warm', 'Lauw', 'Koud'];
+
+export default function YalcPage({ contacts, setContacts, resellers, setResellers }) {
   const [source, setSource] = useState('inkopers');
   const [topN, setTopN] = useState(50);
   const [query, setQuery] = useState('');
+  const [country, setCountry] = useState('');
+  const [category, setCategory] = useState('');
+  const [band, setBand] = useState('');
+
+  const [detail, setDetail] = useState(null);
 
   const ranked = useMemo(() => {
     if (source === 'inkopers') return rankInkopers(contacts);
     return rankResellers(resellers);
   }, [source, contacts, resellers]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return ranked;
-    return ranked.filter((row) => {
-      if (source === 'inkopers') {
-        const c = row.record;
-        const hay = `${c.firstName || ''} ${c.lastName || ''} ${c.company || ''} ${c.jobTitle || ''}`.toLowerCase();
-        return hay.includes(q);
-      }
-      const r = row.record;
-      const hay = `${r.bedrijf || ''} ${r.voornaam || ''} ${r.achternaam || ''} ${r.functietitel || ''}`.toLowerCase();
-      return hay.includes(q);
-    });
-  }, [ranked, query, source]);
+  const countryOptions = useMemo(() => {
+    const counts = new Map();
+    for (const row of ranked) {
+      const rec = row.record;
+      const value = source === 'inkopers' ? rec.country : rec.locatie;
+      if (!value) continue;
+      counts.set(value, (counts.get(value) || 0) + 1);
+    }
+    return [...counts.entries()]
+      .map(([k, v]) => ({ value: k, label: k, count: v }))
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+  }, [ranked, source]);
 
-  const visible = filtered.slice(0, topN);
+  const categoryOptions = useMemo(() => {
+    const counts = new Map();
+    for (const row of ranked) {
+      const rec = row.record;
+      const value = source === 'inkopers' ? rec.sector : rec.resellerType;
+      if (!value) continue;
+      counts.set(value, (counts.get(value) || 0) + 1);
+    }
+    return [...counts.entries()]
+      .map(([k, v]) => ({ value: k, label: k, count: v }))
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+  }, [ranked, source]);
 
   const distribution = useMemo(() => {
     const bands = { Hot: 0, Warm: 0, Lauw: 0, Koud: 0 };
@@ -44,9 +64,42 @@ export default function YalcPage({ contacts, resellers }) {
     return bands;
   }, [ranked]);
 
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return ranked.filter((row) => {
+      const rec = row.record;
+      if (band && scoreBand(row.score) !== band) return false;
+      if (country) {
+        const val = source === 'inkopers' ? rec.country : rec.locatie;
+        if (val !== country) return false;
+      }
+      if (category) {
+        const val = source === 'inkopers' ? rec.sector : rec.resellerType;
+        if (val !== category) return false;
+      }
+      if (q) {
+        const hay = source === 'inkopers'
+          ? `${rec.firstName || ''} ${rec.lastName || ''} ${rec.company || ''} ${rec.jobTitle || ''}`.toLowerCase()
+          : `${rec.bedrijf || ''} ${rec.voornaam || ''} ${rec.achternaam || ''} ${rec.functietitel || ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [ranked, query, country, category, band, source]);
+
+  const visible = filtered.slice(0, topN);
+
   const avg = ranked.length > 0
     ? Math.round(ranked.reduce((sum, r) => sum + r.score, 0) / ranked.length)
     : 0;
+
+  function handleSourceChange(next) {
+    setSource(next);
+    setCountry('');
+    setCategory('');
+    setBand('');
+    setDetail(null);
+  }
 
   function handleExport() {
     const records = visible.map((row) => row.record);
@@ -60,6 +113,38 @@ export default function YalcPage({ contacts, resellers }) {
     }
   }
 
+  // Inkopers detail panel handlers
+  function handleInkoperStatusChange(contact, newStatus) {
+    if (contact.status === newStatus) return;
+    const nowIso = new Date().toISOString();
+    setContacts((prev) => prev.map((c) =>
+      c.id === contact.id ? { ...c, status: newStatus, updatedAt: nowIso } : c,
+    ));
+    setDetail((d) => (d && d.id === contact.id ? { ...d, status: newStatus } : d));
+  }
+
+  function handleInkoperDelete(contact) {
+    const name = `${contact.firstName || ''} ${contact.lastName || ''}`.trim() || 'dit contact';
+    if (!confirm(`Verwijder ${name}?`)) return;
+    setContacts((prev) => prev.filter((c) => c.id !== contact.id));
+    setDetail(null);
+  }
+
+  // Resellers detail panel handlers
+  function handleResellerSave(id, values) {
+    setResellers((prev) => updateReseller(prev, id, values));
+    setDetail((d) => (d && d.id === id ? { ...d, ...values } : d));
+  }
+
+  function handleResellerDelete(reseller) {
+    const label = reseller.bedrijf ||
+      `${reseller.voornaam || ''} ${reseller.achternaam || ''}`.trim() ||
+      'deze reseller';
+    if (!confirm(`Verwijder ${label}?`)) return;
+    setResellers((prev) => deleteReseller(prev, reseller.id));
+    setDetail(null);
+  }
+
   return (
     <div className={styles.page}>
       <section className={styles.hero}>
@@ -69,14 +154,37 @@ export default function YalcPage({ contacts, resellers }) {
             Low Hanging Fruit index, geinspireerd op het YALC GTM OS concept.
             Elk contact krijgt een score uit 100 op basis van signalen van
             benaderbaarheid en Mensys-fit. Zo zie je direct met wie je als
-            eerste contact moet opnemen deze week.
+            eerste contact moet opnemen deze week. Klik op een band om te
+            filteren, of op een rij voor het detailkaartje.
           </p>
         </div>
         <div className={styles.heroStats}>
-          <Stat label="Gemiddelde score" value={avg} suffix="/100" />
-          <Stat label="Hot (80+)" value={distribution.Hot} />
-          <Stat label="Warm (60-79)" value={distribution.Warm} />
-          <Stat label="Lauw (40-59)" value={distribution.Lauw} />
+          <StatButton
+            label="Gemiddelde score"
+            value={avg}
+            suffix="/100"
+            active={false}
+            onClick={null}
+          />
+          {BANDS.map((b) => (
+            <StatButton
+              key={b}
+              label={labelForBand(b)}
+              value={distribution[b]}
+              active={band === b}
+              onClick={() => setBand((v) => (v === b ? '' : b))}
+            />
+          ))}
+          {band && (
+            <button
+              type="button"
+              className={styles.clearBand}
+              onClick={() => setBand('')}
+              title="Band-filter wissen"
+            >
+              Wis filter
+            </button>
+          )}
         </div>
       </section>
 
@@ -85,14 +193,14 @@ export default function YalcPage({ contacts, resellers }) {
           <button
             type="button"
             className={`${styles.toggleBtn} ${source === 'inkopers' ? styles.toggleActive : ''}`}
-            onClick={() => setSource('inkopers')}
+            onClick={() => handleSourceChange('inkopers')}
           >
             Inkopers ({contacts.length.toLocaleString('nl-NL')})
           </button>
           <button
             type="button"
             className={`${styles.toggleBtn} ${source === 'resellers' ? styles.toggleActive : ''}`}
-            onClick={() => setSource('resellers')}
+            onClick={() => handleSourceChange('resellers')}
           >
             Resellers ({resellers.length.toLocaleString('nl-NL')})
           </button>
@@ -105,6 +213,21 @@ export default function YalcPage({ contacts, resellers }) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
+
+        <div className={styles.filterDrops}>
+          <FilterDropdown
+            allLabel={source === 'inkopers' ? 'Alle landen' : 'Alle locaties'}
+            value={country}
+            onChange={setCountry}
+            options={countryOptions}
+          />
+          <FilterDropdown
+            allLabel={source === 'inkopers' ? 'Alle sectoren' : 'Alle reseller types'}
+            value={category}
+            onChange={setCategory}
+            options={categoryOptions}
+          />
+        </div>
 
         <div className={styles.topN}>
           <span className={styles.topLabel}>Top</span>
@@ -155,30 +278,34 @@ export default function YalcPage({ contacts, resellers }) {
               <th className={styles.numCol}>#</th>
               <th className={styles.scoreCol}>Score</th>
               <th>Band</th>
-              <th>{source === 'inkopers' ? 'Bedrijf' : 'Bedrijf'}</th>
+              <th>Bedrijf</th>
               <th>Naam</th>
               <th>Functietitel</th>
+              <th>{source === 'inkopers' ? 'Land' : 'Locatie'}</th>
+              <th>{source === 'inkopers' ? 'Sector' : 'Type'}</th>
               <th>Signalen</th>
             </tr>
           </thead>
           <tbody>
             {visible.length === 0 && (
               <tr>
-                <td colSpan={7} className={styles.empty}>
-                  Geen records. Importeer eerst data op de {source === 'inkopers' ? 'Inkopers' : 'Resellers'} tab.
+                <td colSpan={9} className={styles.empty}>
+                  Geen records. Wijzig filters of importeer data op de {source === 'inkopers' ? 'Inkopers' : 'Resellers'} tab.
                 </td>
               </tr>
             )}
             {visible.map((row, idx) => {
-              const band = scoreBand(row.score);
-              const colors = SCORE_BAND_COLORS[band];
+              const b = scoreBand(row.score);
+              const colors = SCORE_BAND_COLORS[b];
               const rec = row.record;
               const company = source === 'inkopers' ? rec.company : rec.bedrijf;
               const first = source === 'inkopers' ? rec.firstName : rec.voornaam;
               const last = source === 'inkopers' ? rec.lastName : rec.achternaam;
               const job = source === 'inkopers' ? rec.jobTitle : rec.functietitel;
+              const land = source === 'inkopers' ? rec.country : rec.locatie;
+              const cat = source === 'inkopers' ? rec.sector : rec.resellerType;
               return (
-                <tr key={rec.id}>
+                <tr key={rec.id} className={styles.row} onClick={() => setDetail(rec)}>
                   <td className={styles.rowNum}>{idx + 1}</td>
                   <td className={styles.scoreCell}>
                     <div className={styles.scoreBar}>
@@ -194,12 +321,14 @@ export default function YalcPage({ contacts, resellers }) {
                       className={styles.bandPill}
                       style={{ backgroundColor: colors.bg, color: colors.fg }}
                     >
-                      {band}
+                      {b}
                     </span>
                   </td>
                   <td className={styles.companyCell}>{company || '-'}</td>
                   <td>{`${first || ''} ${last || ''}`.trim() || '-'}</td>
                   <td className={styles.dim}>{job || '-'}</td>
+                  <td className={styles.dim}>{land || '-'}</td>
+                  <td className={styles.dim}>{cat || '-'}</td>
                   <td>
                     <div className={styles.signals}>
                       {row.signals.map((s) => (
@@ -219,18 +348,58 @@ export default function YalcPage({ contacts, resellers }) {
           </tbody>
         </table>
       </div>
+
+      {source === 'inkopers' && detail && (
+        <ContactDetailPanel
+          contact={detail}
+          onClose={() => setDetail(null)}
+          onEdit={() => setDetail(null)}
+          onDelete={handleInkoperDelete}
+          onStatusChange={handleInkoperStatusChange}
+        />
+      )}
+      {source === 'resellers' && detail && (
+        <ResellerDetailPanel
+          reseller={detail}
+          onClose={() => setDetail(null)}
+          onDelete={handleResellerDelete}
+          onSave={handleResellerSave}
+        />
+      )}
     </div>
   );
 }
 
-function Stat({ label, value, suffix }) {
-  return (
-    <div className={styles.stat}>
-      <div className={styles.statValue}>
-        {value.toLocaleString('nl-NL')}
-        {suffix && <span className={styles.statSuffix}>{suffix}</span>}
+function StatButton({ label, value, suffix, active, onClick }) {
+  if (!onClick) {
+    return (
+      <div className={styles.stat}>
+        <div className={styles.statValue}>
+          {value.toLocaleString('nl-NL')}
+          {suffix && <span className={styles.statSuffix}>{suffix}</span>}
+        </div>
+        <div className={styles.statLabel}>{label}</div>
       </div>
+    );
+  }
+  return (
+    <button
+      type="button"
+      className={`${styles.stat} ${styles.statClickable} ${active ? styles.statActive : ''}`}
+      onClick={onClick}
+    >
+      <div className={styles.statValue}>{value.toLocaleString('nl-NL')}</div>
       <div className={styles.statLabel}>{label}</div>
-    </div>
+    </button>
   );
+}
+
+function labelForBand(band) {
+  switch (band) {
+    case 'Hot': return 'Hot (80+)';
+    case 'Warm': return 'Warm (60-79)';
+    case 'Lauw': return 'Lauw (40-59)';
+    case 'Koud': return 'Koud (<40)';
+    default: return band;
+  }
 }

@@ -49,6 +49,56 @@
   border-radius: var(--radius-sm);
   padding: 10px 14px;
   min-width: 100px;
+  border: 1px solid transparent;
+  text-align: left;
+}
+
+.statClickable {
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.statClickable:hover {
+  border-color: var(--color-blue);
+  background: var(--color-white);
+}
+
+.statActive,
+.statActive:hover {
+  background: var(--color-blue);
+  border-color: var(--color-blue);
+}
+
+.statActive .statValue,
+.statActive .statLabel,
+.statActive .statSuffix {
+  color: var(--color-white);
+}
+
+.clearBand {
+  align-self: center;
+  font-size: 12px;
+  color: var(--color-blue);
+  background: transparent;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+}
+
+.clearBand:hover {
+  background: rgba(0, 48, 135, 0.08);
+}
+
+.filterDrops {
+  display: flex;
+  gap: 8px;
+  flex: 1 1 260px;
+  min-width: 220px;
+}
+
+.filterDrops > * {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .statValue {
@@ -237,6 +287,11 @@
 
 .table tbody tr:hover {
   background: var(--color-hover);
+}
+
+.row {
+  cursor: pointer;
+  transition: background 0.1s;
 }
 
 .numCol {

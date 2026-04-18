@@ -1,6 +1,6 @@
 import styles from './WelkomPage.module.css';
 
-export default function WelkomPage({ contactCount, onStart, onNavigate }) {
+export default function WelkomPage({ contactCount, resellerCount = 0, onStart, onNavigate }) {
   return (
     <div className={styles.page}>
       <section className={styles.hero}>
@@ -14,6 +14,13 @@ export default function WelkomPage({ contactCount, onStart, onNavigate }) {
         <div className={styles.heroActions}>
           <button type="button" className="btn btn-accent" onClick={onStart}>
             Ga naar Inkopers ({contactCount.toLocaleString('nl-NL')})
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => onNavigate && onNavigate('resellers')}
+          >
+            Ga naar Resellers ({resellerCount.toLocaleString('nl-NL')})
           </button>
         </div>
       </section>

@@ -66,7 +66,15 @@ export function normaliseCompany(raw) {
 function titleCaseWord(word) {
   if (!word) return word;
   if (/^[A-Z0-9&+.\-/]{2,}$/.test(word)) return word;
-  return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+  const parts = word.split(/([-&/])/);
+  return parts
+    .map((p) => {
+      if (p === '-' || p === '&' || p === '/') return p;
+      if (!p) return p;
+      if (/^[A-Z]{2,}$/.test(p)) return p;
+      return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+    })
+    .join('');
 }
 
 function titleCaseChunk(chunk) {

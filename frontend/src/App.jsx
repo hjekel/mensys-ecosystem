@@ -42,6 +42,7 @@ export default function App() {
         {activeTab === 'welkom' && (
           <WelkomPage
             contactCount={contacts.length}
+            resellerCount={resellers.length}
             onStart={() => setActiveTab('inkopers')}
             onNavigate={setActiveTab}
           />
@@ -61,7 +62,12 @@ export default function App() {
           />
         )}
         {activeTab === 'yalc' && (
-          <YalcPage contacts={contacts} resellers={resellers} />
+          <YalcPage
+            contacts={contacts}
+            setContacts={setContactsState}
+            resellers={resellers}
+            setResellers={setResellersState}
+          />
         )}
         {activeTab === 'statistieken' && (
           <StatistiekenPage contacts={contacts} resellers={resellers} />
