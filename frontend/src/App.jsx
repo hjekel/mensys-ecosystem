@@ -4,6 +4,7 @@ import Tabs from './components/Tabs.jsx';
 import WelkomPage from './pages/WelkomPage.jsx';
 import InkopersPage from './pages/InkopersPage.jsx';
 import ResellersPage from './pages/ResellersPage.jsx';
+import CeoPage from './pages/CeoPage.jsx';
 import SignalenPage from './pages/SignalenPage.jsx';
 import YalcPage from './pages/YalcPage.jsx';
 import EcosysteemPage from './pages/EcosysteemPage.jsx';
@@ -11,15 +12,18 @@ import StatistiekenPage from './pages/StatistiekenPage.jsx';
 import InstellingenModal from './components/InstellingenModal.jsx';
 import { loadContacts, saveContacts } from './utils/storage.js';
 import { getResellers, saveResellers } from './store/resellersStore.js';
+import { getCeos, saveCeos } from './store/ceoStore.js';
 import { loadInstellingen, saveInstellingen } from './utils/instellingen.js';
 import styles from './App.module.css';
 
 export default function App() {
   const [contacts, setContactsState] = useState(() => loadContacts());
   const [resellers, setResellersState] = useState(() => getResellers());
+  const [ceos, setCeosState] = useState(() => getCeos());
   const [activeTab, setActiveTab] = useState('welkom');
   const [inkopersFilteredCount, setInkopersFilteredCount] = useState(null);
   const [resellersFilteredCount, setResellersFilteredCount] = useState(null);
+  const [ceoFilteredCount, setCeoFilteredCount] = useState(null);
   const [pendingInkopersFilter, setPendingInkopersFilter] = useState(null);
   const [pendingResellersFilter, setPendingResellersFilter] = useState(null);
   const [instellingen, setInstellingen] = useState(() => loadInstellingen());
@@ -49,11 +53,16 @@ export default function App() {
     saveResellers(resellers);
   }, [resellers]);
 
+  useEffect(() => {
+    saveCeos(ceos);
+  }, [ceos]);
+
   const tabs = [
     { id: 'welkom', label: 'Welkom' },
     { id: 'signalen', label: 'Signalen' },
     { id: 'inkopers', label: 'Inkopers', count: inkopersFilteredCount ?? contacts.length },
     { id: 'resellers', label: 'Resellers', count: resellersFilteredCount ?? resellers.length },
+    { id: 'ceo', label: 'CEO & MD', count: ceoFilteredCount ?? ceos.length },
     { id: 'yalc', label: 'YALC' },
     { id: 'ecosysteem', label: 'Ecosysteem' },
     { id: 'statistieken', label: 'Statistieken' },
@@ -91,6 +100,13 @@ export default function App() {
             initialFilter={pendingResellersFilter}
           />
         )}
+        {activeTab === 'ceo' && (
+          <CeoPage
+            ceos={ceos}
+            setCeos={setCeosState}
+            onFilteredCountChange={setCeoFilteredCount}
+          />
+        )}
         {activeTab === 'signalen' && (
           <SignalenPage
             contacts={contacts}
@@ -105,6 +121,8 @@ export default function App() {
             setContacts={setContactsState}
             resellers={resellers}
             setResellers={setResellersState}
+            ceos={ceos}
+            setCeos={setCeosState}
           />
         )}
         {activeTab === 'ecosysteem' && (
@@ -119,6 +137,7 @@ export default function App() {
           <StatistiekenPage
             contacts={contacts}
             resellers={resellers}
+            ceos={ceos}
             onNavigateInkopers={navigateToInkopers}
             onNavigateResellers={navigateToResellers}
           />

@@ -130,6 +130,18 @@ npm start        # start backend
 - Email template generator vanuit contact
 - LinkedIn outreach tracking
 
+## CEO & MD tab
+- Store: frontend/src/store/ceoStore.js
+- localStorage key: mensys_ceo
+- Page: frontend/src/pages/CeoPage.jsx
+- Datastructuur: identiek aan Inkopers, fteCategory uit {1-10, 11-50}
+- Functietitels typisch: CEO, DGA, Directeur, Eigenaar, Founder, MD,
+  Managing Director, Owner, Oprichter
+- Mensys Fit altijd Hoog (Martin-type doelgroep)
+- Kanban kolommen: Nieuw | Warm | Benaderd | Gesprek gevoerd | Klant
+- CSV import: derde modus in CSVImportModal (mode=ceo)
+- YALC: derde bron-toggle, scoreCeo geeft +25 bonus voor altijd-Hoog
+
 ## Resellers tab
 - Store: frontend/src/store/resellersStore.js
 - localStorage key: mensys_resellers

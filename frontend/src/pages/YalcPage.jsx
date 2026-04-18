@@ -8,6 +8,7 @@ import YalcGewichtenModal from '../components/YalcGewichtenModal.jsx';
 import {
   rankInkopers,
   rankResellers,
+  rankCeos,
   scoreBand,
   SCORE_BAND_COLORS,
 } from '../utils/lhf.js';
@@ -15,13 +16,14 @@ import { contactsToCsv, downloadCsv } from '../utils/csvParser.js';
 import { resellersToCsv } from '../utils/resellerCsv.js';
 import { updateContact } from '../utils/storage.js';
 import { updateReseller, deleteReseller } from '../store/resellersStore.js';
+import { updateCeo, deleteCeo } from '../store/ceoStore.js';
 import { loadSignalen } from '../utils/signaalFetcher.js';
 import { getGewichten } from '../utils/yalcInstellingen.js';
 import styles from './YalcPage.module.css';
 
 const BANDS = ['Hot', 'Warm', 'Lauw', 'Koud'];
 
-export default function YalcPage({ contacts, setContacts, resellers, setResellers }) {
+export default function YalcPage({ contacts, setContacts, resellers, setResellers, ceos = [], setCeos }) {
   const [source, setSource] = useState('inkopers');
   const [topN, setTopN] = useState(50);
   const [query, setQuery] = useState('');
@@ -37,14 +39,15 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
 
   const ranked = useMemo(() => {
     if (source === 'inkopers') return rankInkopers(contacts, gewichten);
+    if (source === 'ceo') return rankCeos(ceos);
     return rankResellers(resellers);
-  }, [source, contacts, resellers, gewichten]);
+  }, [source, contacts, resellers, ceos, gewichten]);
 
   const countryOptions = useMemo(() => {
     const counts = new Map();
     for (const row of ranked) {
       const rec = row.record;
-      const value = source === 'inkopers' ? rec.country : rec.locatie;
+      const value = source === 'resellers' ? rec.locatie : rec.country;
       if (!value) continue;
       counts.set(value, (counts.get(value) || 0) + 1);
     }
@@ -57,7 +60,7 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
     const counts = new Map();
     for (const row of ranked) {
       const rec = row.record;
-      const value = source === 'inkopers' ? rec.sector : rec.resellerType;
+      const value = source === 'resellers' ? rec.resellerType : rec.sector;
       if (!value) continue;
       counts.set(value, (counts.get(value) || 0) + 1);
     }
@@ -80,17 +83,17 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
       const rec = row.record;
       if (band && scoreBand(row.score) !== band) return false;
       if (country) {
-        const val = source === 'inkopers' ? rec.country : rec.locatie;
+        const val = source === 'resellers' ? rec.locatie : rec.country;
         if (val !== country) return false;
       }
       if (category) {
-        const val = source === 'inkopers' ? rec.sector : rec.resellerType;
+        const val = source === 'resellers' ? rec.resellerType : rec.sector;
         if (val !== category) return false;
       }
       if (q) {
-        const hay = source === 'inkopers'
-          ? `${rec.firstName || ''} ${rec.lastName || ''} ${rec.company || ''} ${rec.jobTitle || ''}`.toLowerCase()
-          : `${rec.bedrijf || ''} ${rec.voornaam || ''} ${rec.achternaam || ''} ${rec.functietitel || ''}`.toLowerCase();
+        const hay = source === 'resellers'
+          ? `${rec.bedrijf || ''} ${rec.voornaam || ''} ${rec.achternaam || ''} ${rec.functietitel || ''}`.toLowerCase()
+          : `${rec.firstName || ''} ${rec.lastName || ''} ${rec.company || ''} ${rec.jobTitle || ''}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
@@ -114,12 +117,15 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
   function handleExport() {
     const records = visible.map((row) => row.record);
     const stamp = new Date().toISOString().slice(0, 10);
-    if (source === 'inkopers') {
-      const csv = contactsToCsv(records);
-      downloadCsv(`mensys-yalc-inkopers-${stamp}.csv`, csv);
-    } else {
+    if (source === 'resellers') {
       const csv = resellersToCsv(records);
       downloadCsv(`mensys-yalc-resellers-${stamp}.csv`, csv);
+    } else if (source === 'ceo') {
+      const csv = contactsToCsv(records);
+      downloadCsv(`mensys-yalc-ceo-${stamp}.csv`, csv);
+    } else {
+      const csv = contactsToCsv(records);
+      downloadCsv(`mensys-yalc-inkopers-${stamp}.csv`, csv);
     }
   }
 
@@ -134,6 +140,22 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
     const name = `${contact.firstName || ''} ${contact.lastName || ''}`.trim() || 'dit contact';
     if (!confirm(`Verwijder ${name}?`)) return;
     setContacts((prev) => prev.filter((c) => c.id !== contact.id));
+    setDetail(null);
+  }
+
+  // CEO detail panel handlers
+  function handleCeoStatusChange(contact, newStatus) {
+    if (contact.status === newStatus) return;
+    if (!setCeos) return;
+    setCeos((prev) => updateCeo(prev, contact.id, { status: newStatus }));
+    setDetail((d) => (d && d.id === contact.id ? { ...d, status: newStatus } : d));
+  }
+
+  function handleCeoDelete(contact) {
+    const name = `${contact.firstName || ''} ${contact.lastName || ''}`.trim() || 'dit contact';
+    if (!confirm(`Verwijder ${name}?`)) return;
+    if (!setCeos) return;
+    setCeos((prev) => deleteCeo(prev, contact.id));
     setDetail(null);
   }
 
@@ -163,13 +185,15 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
 
   function openOpener(e, rec) {
     e.stopPropagation();
-    const naam = source === 'inkopers'
-      ? `${rec.firstName || ''} ${rec.lastName || ''}`.trim()
-      : `${rec.voornaam || ''} ${rec.achternaam || ''}`.trim();
-    const functie = source === 'inkopers' ? (rec.jobTitle || '') : (rec.functietitel || '');
-    const bedrijf = source === 'inkopers' ? (rec.company || '') : (rec.bedrijf || '');
+    const isReseller = source === 'resellers';
+    const naam = isReseller
+      ? `${rec.voornaam || ''} ${rec.achternaam || ''}`.trim()
+      : `${rec.firstName || ''} ${rec.lastName || ''}`.trim();
+    const functie = isReseller ? (rec.functietitel || '') : (rec.jobTitle || '');
+    const bedrijf = isReseller ? (rec.bedrijf || '') : (rec.company || '');
     const signaal = findSignalForCompany(bedrijf);
-    const doelgroep = source === 'inkopers' ? 'inkoper' : 'reseller';
+    const doelgroep =
+      source === 'resellers' ? 'reseller' : source === 'ceo' ? 'directeur/eigenaar' : 'inkoper';
     setOpenerContext({ naam, functie, bedrijf, signaal, doelgroep });
     setOpenerTargetId(rec.id);
   }
@@ -178,16 +202,21 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
     if (!openerTargetId) return;
     const stamp = new Date().toLocaleDateString('nl-NL');
     const prefix = `Opener (${stamp}):\n`;
-    if (source === 'inkopers') {
-      const c = contacts.find((x) => x.id === openerTargetId);
-      if (!c) return;
-      const combined = c.notes ? `${c.notes}\n\n${prefix}${text}` : `${prefix}${text}`;
-      setContacts((prev) => updateContact(prev, openerTargetId, { notes: combined }));
-    } else {
+    if (source === 'resellers') {
       const r = resellers.find((x) => x.id === openerTargetId);
       if (!r) return;
       const combined = r.notities ? `${r.notities}\n\n${prefix}${text}` : `${prefix}${text}`;
       setResellers((prev) => updateReseller(prev, openerTargetId, { notities: combined }));
+    } else if (source === 'ceo') {
+      const c = ceos.find((x) => x.id === openerTargetId);
+      if (!c || !setCeos) return;
+      const combined = c.notes ? `${c.notes}\n\n${prefix}${text}` : `${prefix}${text}`;
+      setCeos((prev) => updateCeo(prev, openerTargetId, { notes: combined }));
+    } else {
+      const c = contacts.find((x) => x.id === openerTargetId);
+      if (!c) return;
+      const combined = c.notes ? `${c.notes}\n\n${prefix}${text}` : `${prefix}${text}`;
+      setContacts((prev) => updateContact(prev, openerTargetId, { notes: combined }));
     }
   }
 
@@ -252,25 +281,32 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
           >
             Resellers ({resellers.length.toLocaleString('nl-NL')})
           </button>
+          <button
+            type="button"
+            className={`${styles.toggleBtn} ${source === 'ceo' ? styles.toggleActive : ''}`}
+            onClick={() => handleSourceChange('ceo')}
+          >
+            CEO & MD ({ceos.length.toLocaleString('nl-NL')})
+          </button>
         </div>
 
         <input
           type="text"
           className={`input ${styles.search}`}
-          placeholder={source === 'inkopers' ? 'Zoek op naam, bedrijf of functie' : 'Zoek op bedrijf, naam of functietitel'}
+          placeholder={source === 'resellers' ? 'Zoek op bedrijf, naam of functietitel' : 'Zoek op naam, bedrijf of functie'}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
 
         <div className={styles.filterDrops}>
           <FilterDropdown
-            allLabel={source === 'inkopers' ? 'Alle landen' : 'Alle locaties'}
+            allLabel={source === 'resellers' ? 'Alle locaties' : 'Alle landen'}
             value={country}
             onChange={setCountry}
             options={countryOptions}
           />
           <FilterDropdown
-            allLabel={source === 'inkopers' ? 'Alle sectoren' : 'Alle reseller types'}
+            allLabel={source === 'resellers' ? 'Alle reseller types' : 'Alle sectoren'}
             value={category}
             onChange={setCategory}
             options={categoryOptions}
@@ -309,7 +345,7 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
 
       <section className={styles.legendWrap}>
         <h2 className={styles.sectionTitle}>Scoring regels</h2>
-        {source === 'inkopers' ? (
+        {source === 'inkopers' && (
           <ul className={styles.legend}>
             <li><strong>20</strong> Email aanwezig</li>
             <li><strong>20</strong> LinkedIn URL aanwezig</li>
@@ -318,7 +354,8 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
             <li><strong>15</strong> Sector in Zorg, Overheid, Maakindustrie, Tech of Onderwijs</li>
             <li><strong>10</strong> Prioriteit Hoog</li>
           </ul>
-        ) : (
+        )}
+        {source === 'resellers' && (
           <ul className={styles.legend}>
             <li><strong>30</strong> Mensys Fit Hoog (15 bij Midden, 5 bij Onderzoeken)</li>
             <li><strong>20</strong> Email aanwezig</li>
@@ -326,6 +363,16 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
             <li><strong>15</strong> Status Warm of Gesprek gevoerd</li>
             <li><strong>10</strong> Reseller Type bepaald (niet Nader te bepalen)</li>
             <li><strong>5</strong> FTE 11-500 (ideale reseller schaal)</li>
+          </ul>
+        )}
+        {source === 'ceo' && (
+          <ul className={styles.legend}>
+            <li><strong>25</strong> Martin-type (Mensys Fit altijd Hoog)</li>
+            <li><strong>20</strong> Email aanwezig</li>
+            <li><strong>20</strong> LinkedIn URL aanwezig</li>
+            <li><strong>15</strong> FTE 1-10 of 11-50 (ideale doelgroep)</li>
+            <li><strong>15</strong> Status Warm of Gesprek gevoerd</li>
+            <li><strong>5</strong> Prioriteit Hoog</li>
           </ul>
         )}
       </section>
@@ -340,8 +387,8 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
               <th>Bedrijf</th>
               <th>Naam</th>
               <th>Functietitel</th>
-              <th>{source === 'inkopers' ? 'Land' : 'Locatie'}</th>
-              <th>{source === 'inkopers' ? 'Sector' : 'Type'}</th>
+              <th>{source === 'resellers' ? 'Locatie' : 'Land'}</th>
+              <th>{source === 'resellers' ? 'Type' : 'Sector'}</th>
               <th>Signalen</th>
               <th className={styles.actionCol}>Actie</th>
             </tr>
@@ -350,7 +397,7 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
             {visible.length === 0 && (
               <tr>
                 <td colSpan={10} className={styles.empty}>
-                  Geen records. Wijzig filters of importeer data op de {source === 'inkopers' ? 'Inkopers' : 'Resellers'} tab.
+                  Geen records. Wijzig filters of importeer data op de {source === 'resellers' ? 'Resellers' : source === 'ceo' ? 'CEO & MD' : 'Inkopers'} tab.
                 </td>
               </tr>
             )}
@@ -358,12 +405,13 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
               const b = scoreBand(row.score);
               const colors = SCORE_BAND_COLORS[b];
               const rec = row.record;
-              const company = source === 'inkopers' ? rec.company : rec.bedrijf;
-              const first = source === 'inkopers' ? rec.firstName : rec.voornaam;
-              const last = source === 'inkopers' ? rec.lastName : rec.achternaam;
-              const job = source === 'inkopers' ? rec.jobTitle : rec.functietitel;
-              const land = source === 'inkopers' ? rec.country : rec.locatie;
-              const cat = source === 'inkopers' ? rec.sector : rec.resellerType;
+              const isReseller = source === 'resellers';
+              const company = isReseller ? rec.bedrijf : rec.company;
+              const first = isReseller ? rec.voornaam : rec.firstName;
+              const last = isReseller ? rec.achternaam : rec.lastName;
+              const job = isReseller ? rec.functietitel : rec.jobTitle;
+              const land = isReseller ? rec.locatie : rec.country;
+              const cat = isReseller ? rec.resellerType : rec.sector;
               return (
                 <tr key={rec.id} className={styles.row} onClick={() => setDetail(rec)}>
                   <td className={styles.rowNum}>{idx + 1}</td>
@@ -434,6 +482,15 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
           onClose={() => setDetail(null)}
           onDelete={handleResellerDelete}
           onSave={handleResellerSave}
+        />
+      )}
+      {source === 'ceo' && detail && (
+        <ContactDetailPanel
+          contact={detail}
+          onClose={() => setDetail(null)}
+          onEdit={() => setDetail(null)}
+          onDelete={handleCeoDelete}
+          onStatusChange={handleCeoStatusChange}
         />
       )}
 

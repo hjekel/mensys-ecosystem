@@ -3,8 +3,10 @@ import Modal from './Modal.jsx';
 import styles from './CSVImportModal.module.css';
 import { parseFile, rowsToContacts } from '../utils/csvParser.js';
 import { rowsToResellers } from '../utils/resellerCsv.js';
+import { rowsToCeos } from '../utils/ceoCsv.js';
 import { mergeContacts } from '../utils/storage.js';
 import { importResellers } from '../store/resellersStore.js';
+import { importCeos } from '../store/ceoStore.js';
 import { CSV_COLUMNS } from '@shared/mappings.js';
 import { RESELLER_CSV_COLUMNS } from '@shared/constants.js';
 
@@ -23,9 +25,10 @@ export default function CSVImportModal({ open, mode = 'inkopers', onClose, exist
   const fileRef = useRef(null);
 
   const isResellers = mode === 'resellers';
+  const isCeo = mode === 'ceo';
   const expected = isResellers ? RESELLERS_EXPECTED : INKOPERS_EXPECTED;
-  const entityLabel = isResellers ? 'resellers' : 'inkopers';
-  const entitySingular = isResellers ? 'reseller' : 'contact';
+  const entityLabel = isResellers ? 'resellers' : isCeo ? 'CEOs' : 'inkopers';
+  const entitySingular = isResellers ? 'reseller' : isCeo ? 'CEO' : 'contact';
 
   function reset() {
     setStage('upload');
@@ -68,6 +71,11 @@ export default function CSVImportModal({ open, mode = 'inkopers', onClose, exist
       const { merged, added, skipped, total } = importResellers(existing, incoming);
       onImport(merged);
       setResult({ total, added, skipped });
+    } else if (isCeo) {
+      const incoming = rowsToCeos(rows);
+      const { merged, added, skipped, total } = importCeos(existing, incoming);
+      onImport(merged);
+      setResult({ total, added, skipped });
     } else {
       const contacts = rowsToContacts(rows);
       const { merged, added, skipped } = mergeContacts(existing, contacts);
@@ -84,9 +92,17 @@ export default function CSVImportModal({ open, mode = 'inkopers', onClose, exist
     (h) => !expected.some((e) => String(e).toLowerCase() === String(h).toLowerCase()),
   );
 
-  const previewRows = isResellers ? rowsToResellers(preview) : rowsToContacts(preview);
+  const previewRows = isResellers
+    ? rowsToResellers(preview)
+    : isCeo
+      ? rowsToCeos(preview)
+      : rowsToContacts(preview);
 
-  const title = isResellers ? 'Resellers importeren' : 'Inkopers importeren';
+  const title = isResellers
+    ? 'Resellers importeren'
+    : isCeo
+      ? 'CEO & MD importeren'
+      : 'Inkopers importeren';
 
   const hint = isResellers
     ? 'Verwachte kolomnamen: bedrijf, voornaam, achternaam, functietitel, email, linkedin, fteRange, resellerType, mensysFit, bron, locatie, website, status, keywords, notities.'

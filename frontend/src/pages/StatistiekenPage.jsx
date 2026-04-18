@@ -14,12 +14,14 @@ import {
 export default function StatistiekenPage({
   contacts,
   resellers = [],
+  ceos = [],
   onNavigateInkopers,
   onNavigateResellers,
 }) {
   const stats = useMemo(() => computeStats(contacts), [contacts]);
   const jobTitleStats = useMemo(() => computeJobTitles(contacts), [contacts]);
   const resellerStats = useMemo(() => computeResellerStats(resellers), [resellers]);
+  const ceoStats = useMemo(() => computeCeoStats(ceos), [ceos]);
 
   const goInkopers = (filter) => onNavigateInkopers && onNavigateInkopers(filter);
   const goResellers = (filter) => onNavigateResellers && onNavigateResellers(filter);
@@ -132,6 +134,47 @@ export default function StatistiekenPage({
           }))}
           total={resellerStats.total}
           onItemClick={(it) => goResellers({ status: it.label })}
+        />
+      </div>
+
+      <div className={styles.sectionDivider}>
+        <h2 className={styles.sectionTitle}>CEO & MD (kleine organisaties)</h2>
+      </div>
+
+      <div className={styles.tiles}>
+        <Tile label="Totaal CEO/MD" value={ceoStats.total} />
+        <Tile label="NL contacten" value={ceoStats.nl} />
+        <Tile label="Met email" value={ceoStats.withEmail} />
+        <Tile label="Met LinkedIn" value={ceoStats.withLinkedin} />
+      </div>
+
+      <div className={styles.grid}>
+        <BarCard
+          title="Verdeling per sector (CEO & MD)"
+          items={SECTORS.map((s) => ({
+            label: s,
+            value: ceoStats.bySector[s] || 0,
+            color: SECTOR_COLORS[s],
+          }))}
+          total={ceoStats.total}
+        />
+        <BarCard
+          title="Verdeling per FTE (CEO & MD)"
+          items={['1-10', '11-50'].map((f) => ({
+            label: f,
+            value: ceoStats.byFte[f] || 0,
+            color: '#003087',
+          }))}
+          total={ceoStats.total}
+        />
+        <BarCard
+          title="Pipeline CEO/MD (per status)"
+          items={STATUSES.map((s) => ({
+            label: s,
+            value: ceoStats.byStatus[s] || 0,
+            color: statusColor(s),
+          }))}
+          total={ceoStats.total}
         />
       </div>
     </div>
@@ -332,6 +375,24 @@ function resellerStatusColor(status) {
     case 'Partner': return '#00a878';
     default: return '#6B7280';
   }
+}
+
+function computeCeoStats(ceos) {
+  const bySector = {};
+  const byFte = {};
+  const byStatus = {};
+  let nl = 0;
+  let withEmail = 0;
+  let withLinkedin = 0;
+  for (const c of ceos) {
+    bySector[c.sector] = (bySector[c.sector] || 0) + 1;
+    byFte[c.fteCategory] = (byFte[c.fteCategory] || 0) + 1;
+    byStatus[c.status] = (byStatus[c.status] || 0) + 1;
+    if (isNetherlands(c.country)) nl += 1;
+    if (c.email) withEmail += 1;
+    if (c.linkedinUrl) withLinkedin += 1;
+  }
+  return { total: ceos.length, nl, withEmail, withLinkedin, bySector, byFte, byStatus };
 }
 
 function computeResellerStats(resellers) {

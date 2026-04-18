@@ -22,13 +22,17 @@ export default function Filters({
   onCleanupClick,
   totalCount,
   facetCounts,
+  fteCategories,
+  searchPlaceholder,
+  addLabel,
 }) {
   const sectorCounts = facetCounts?.sector || {};
   const fteCounts = facetCounts?.fte || {};
   const statusCounts = facetCounts?.status || {};
 
+  const fteList = fteCategories && fteCategories.length > 0 ? fteCategories : FTE_CATEGORIES;
   const sectorOpts = SECTORS.map((s) => ({ value: s, label: s, count: sectorCounts[s] || 0 }));
-  const fteOpts = FTE_CATEGORIES.map((f) => ({ value: f, label: f, count: fteCounts[f] || 0 }));
+  const fteOpts = fteList.map((f) => ({ value: f, label: f, count: fteCounts[f] || 0 }));
   const statusOpts = STATUSES.map((s) => ({ value: s, label: s, count: statusCounts[s] || 0 }));
   const jobTitleOpts = jobTitleOptions || [];
 
@@ -51,7 +55,7 @@ export default function Filters({
           <input
             type="text"
             className={`input ${styles.search}`}
-            placeholder="Zoek op naam, bedrijf of functie"
+            placeholder={searchPlaceholder || 'Zoek op naam, bedrijf of functie'}
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
           />
@@ -88,7 +92,7 @@ export default function Filters({
           CSV importeren
         </button>
         <button className="btn btn-accent" type="button" onClick={onAddClick}>
-          + Contact toevoegen
+          {addLabel || '+ Contact toevoegen'}
         </button>
       </div>
 

@@ -91,6 +91,22 @@ export const MENSYS_FIT_COLORS = {
   Onbekend: { bg: '#f2f5fb', fg: '#5c6a85' },
 };
 
+export const CEO_STORAGE_KEY = 'mensys_ceo';
+
+export const CEO_FTE_CATEGORIES = ['1-10', '11-50'];
+
+export const CEO_FUNCTIETITELS = [
+  'CEO',
+  'DGA',
+  'Directeur',
+  'Eigenaar',
+  'Founder',
+  'MD',
+  'Managing Director',
+  'Owner',
+  'Oprichter',
+];
+
 export const RESELLER_CSV_COLUMNS = {
   bedrijf: 'bedrijf',
   voornaam: 'voornaam',

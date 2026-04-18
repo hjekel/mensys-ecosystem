@@ -27,6 +27,8 @@ const IDEAL_FTE_RESELLER = new Set([
   '201-500',
 ]);
 
+const IDEAL_FTE_CEO = new Set(['1-10', '11-50']);
+
 const WARM_STATUSES = new Set(['Warm', 'Gesprek gevoerd']);
 
 export function scoreInkoper(c, gewichten) {
@@ -104,6 +106,43 @@ export function rankInkopers(contacts, gewichten) {
   const g = gewichten || getGewichten();
   return contacts
     .map((c) => ({ record: c, ...scoreInkoper(c, g) }))
+    .sort((a, b) => b.score - a.score);
+}
+
+export function scoreCeo(c) {
+  const signals = [];
+  let score = 0;
+
+  score += 25;
+  signals.push({ label: 'Martin-type (Mensys Fit Hoog)', points: 25 });
+
+  if (c.email) {
+    score += 20;
+    signals.push({ label: 'Email aanwezig', points: 20 });
+  }
+  if (c.linkedinUrl) {
+    score += 20;
+    signals.push({ label: 'LinkedIn aanwezig', points: 20 });
+  }
+  if (IDEAL_FTE_CEO.has(c.fteCategory)) {
+    score += 15;
+    signals.push({ label: `FTE ${c.fteCategory}`, points: 15 });
+  }
+  if (WARM_STATUSES.has(c.status)) {
+    score += 15;
+    signals.push({ label: `Status ${c.status}`, points: 15 });
+  }
+  if (c.priority === 'Hoog') {
+    score += 5;
+    signals.push({ label: 'Prioriteit Hoog', points: 5 });
+  }
+
+  return { score, signals };
+}
+
+export function rankCeos(ceos) {
+  return ceos
+    .map((c) => ({ record: c, ...scoreCeo(c) }))
     .sort((a, b) => b.score - a.score);
 }
 
