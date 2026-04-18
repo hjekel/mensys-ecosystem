@@ -23,4 +23,13 @@
   font-size: 14px;
   opacity: 0.95;
   line-height: 1.5;
+  flex: 1;
+  min-width: 0;
+}
+
+.user {
+  font-size: 13px;
+  opacity: 0.8;
+  font-weight: 500;
+  white-space: nowrap;
 }

@@ -176,6 +176,21 @@ npm start        # start backend
 - 3 blokken: Ochtend, Uitreik, Einde dag
 - Navigeert naar Signalen/YALC/Inkopers tabs
 
+## Instellingen
+- Util: frontend/src/utils/instellingen.js
+- Modal: frontend/src/components/InstellingenModal.jsx
+- localStorage key: mensys_instellingen
+- Configureerbaar: bedrijfsnaam, propositie, gebruikersnaam, logoKleur
+- Wijzigt propositie-banner (kleur plus tekst), Welkom-titel en footer
+- Te openen via tandwiel-icoon rechtsboven op Welkom-tab
+
+## Workflow SOP
+- Component: frontend/src/components/WorkflowSop.jsx
+- Drie uitklapbare blokken op Welkom-tab: Dagelijks (10 min),
+  Wekelijks (1 uur), Maandelijks (30 min)
+- Native <details>/<summary> voor expand/collapse
+- Bevat opener-flow uitleg in Dagelijks-blok
+
 ## Ecosysteem tab
 - Page: frontend/src/pages/EcosysteemPage.jsx
 - SVG radiale visualisatie (geen D3, puur SVG + React) met drie ringen

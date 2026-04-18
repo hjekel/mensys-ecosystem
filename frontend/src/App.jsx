@@ -8,8 +8,10 @@ import SignalenPage from './pages/SignalenPage.jsx';
 import YalcPage from './pages/YalcPage.jsx';
 import EcosysteemPage from './pages/EcosysteemPage.jsx';
 import StatistiekenPage from './pages/StatistiekenPage.jsx';
+import InstellingenModal from './components/InstellingenModal.jsx';
 import { loadContacts, saveContacts } from './utils/storage.js';
 import { getResellers, saveResellers } from './store/resellersStore.js';
+import { loadInstellingen, saveInstellingen } from './utils/instellingen.js';
 import styles from './App.module.css';
 
 export default function App() {
@@ -20,6 +22,14 @@ export default function App() {
   const [resellersFilteredCount, setResellersFilteredCount] = useState(null);
   const [pendingInkopersFilter, setPendingInkopersFilter] = useState(null);
   const [pendingResellersFilter, setPendingResellersFilter] = useState(null);
+  const [instellingen, setInstellingen] = useState(() => loadInstellingen());
+  const [instellingenOpen, setInstellingenOpen] = useState(false);
+
+  function handleSaveInstellingen(next) {
+    const saved = saveInstellingen(next);
+    setInstellingen(saved);
+    setInstellingenOpen(false);
+  }
 
   function navigateToInkopers(filter) {
     setPendingInkopersFilter(filter ? { ...filter, _ts: Date.now() } : null);
@@ -51,7 +61,7 @@ export default function App() {
 
   return (
     <div className={styles.app}>
-      <PropositionBanner />
+      <PropositionBanner instellingen={instellingen} />
       <Tabs tabs={tabs} active={activeTab} onChange={setActiveTab} />
 
       <main className={styles.main}>
@@ -61,6 +71,8 @@ export default function App() {
             resellerCount={resellers.length}
             onStart={() => setActiveTab('inkopers')}
             onNavigate={setActiveTab}
+            onOpenSettings={() => setInstellingenOpen(true)}
+            instellingen={instellingen}
           />
         )}
         {activeTab === 'inkopers' && (
@@ -114,7 +126,7 @@ export default function App() {
       </main>
 
       <footer className={styles.footer}>
-        <span>Mensys Ecosystem App v{__APP_VERSION__}</span>
+        <span>{instellingen.bedrijfsnaam || 'Mensys'} Ecosystem App v{__APP_VERSION__}</span>
         <span className={styles.footerDot}>·</span>
         <span title={__APP_BUILD_DATE__}>
           Laatst bijgewerkt: {formatBuildDate(__APP_BUILD_DATE__)}
@@ -122,6 +134,13 @@ export default function App() {
         <span className={styles.footerDot}>·</span>
         <span>Data opgeslagen in je browser</span>
       </footer>
+
+      <InstellingenModal
+        open={instellingenOpen}
+        instellingen={instellingen}
+        onClose={() => setInstellingenOpen(false)}
+        onSave={handleSaveInstellingen}
+      />
     </div>
   );
 }
