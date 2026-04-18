@@ -386,3 +386,23 @@
   color: var(--color-text-secondary);
   font-style: italic;
 }
+
+.actionCol {
+  width: 90px;
+  text-align: right;
+}
+
+.openerBtn {
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: var(--radius-sm);
+  color: var(--color-white);
+  background: var(--color-orange);
+  font-weight: 600;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.openerBtn:hover {
+  background: #c44208;
+}

@@ -1,8 +1,11 @@
+import DagelijkseChecklist from '../components/DagelijkseChecklist.jsx';
 import styles from './WelkomPage.module.css';
 
 export default function WelkomPage({ contactCount, resellerCount = 0, onStart, onNavigate }) {
   return (
     <div className={styles.page}>
+      <DagelijkseChecklist onNavigate={onNavigate} />
+
       <section className={styles.hero}>
         <h1 className={styles.title}>Welkom bij Mensys Ecosystem</h1>
         <p className={styles.lead}>

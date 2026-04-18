@@ -6,7 +6,7 @@ import ContactDetailPanel from '../components/ContactDetailPanel.jsx';
 import ContactFormModal from '../components/ContactFormModal.jsx';
 import CSVImportModal from '../components/CSVImportModal.jsx';
 import { contactsToCsv, downloadCsv } from '../utils/csvParser.js';
-import { generateId } from '../utils/storage.js';
+import { generateId, updateContact } from '../utils/storage.js';
 import { applyCleanup, planCleanup } from '../utils/cleanup.js';
 import styles from './InkopersPage.module.css';
 
@@ -94,13 +94,7 @@ export default function InkopersPage({ contacts, setContacts, onFilteredCountCha
 
   function handleStatusChange(contact, newStatus) {
     if (contact.status === newStatus) return;
-    setContacts((prev) =>
-      prev.map((c) =>
-        c.id === contact.id
-          ? { ...c, status: newStatus, updatedAt: new Date().toISOString() }
-          : c,
-      ),
-    );
+    setContacts((prev) => updateContact(prev, contact.id, { status: newStatus }));
     if (detail && detail.id === contact.id) {
       setDetail({ ...contact, status: newStatus });
     }
@@ -132,13 +126,7 @@ export default function InkopersPage({ contacts, setContacts, onFilteredCountCha
   function handleSaveForm(formValues) {
     const nowIso = new Date().toISOString();
     if (formInitial?.id) {
-      setContacts((prev) =>
-        prev.map((c) =>
-          c.id === formInitial.id
-            ? { ...c, ...formValues, updatedAt: nowIso }
-            : c,
-        ),
-      );
+      setContacts((prev) => updateContact(prev, formInitial.id, formValues));
     } else {
       const newContact = {
         id: generateId(),

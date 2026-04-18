@@ -39,9 +39,15 @@ export function addReseller(existing, values) {
 
 export function updateReseller(existing, id, values) {
   const nowIso = new Date().toISOString();
-  return existing.map((r) =>
-    r.id === id ? { ...r, ...values, updatedAt: nowIso } : r,
-  );
+  return existing.map((r) => {
+    if (r.id !== id) return r;
+    const next = { ...r, ...values, updatedAt: nowIso };
+    if (values.status && values.status !== r.status && !values.statusHistory) {
+      const history = Array.isArray(r.statusHistory) ? r.statusHistory : [];
+      next.statusHistory = [...history, { status: values.status, datum: nowIso }];
+    }
+    return next;
+  });
 }
 
 export function deleteReseller(existing, id) {

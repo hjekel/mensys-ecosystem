@@ -156,3 +156,29 @@ npm start        # start backend
 - Bands: Hot 80+, Warm 60-79, Lauw 40-59, Koud <40
 - Signalen: email, LinkedIn, FTE-match, sector/priority, status Warm,
   prio Hoog (Inkopers) of Mensys Fit (Resellers)
+- Week-doelen widget bovenaan: connecties, DMs, reacties, gesprekken,
+  partners van afgelopen 7 dagen (uit statusHistory)
+- Opener-knop per rij: opent OpenerModal, roept Anthropic API aan
+  (claude-sonnet-4-20250514, max_tokens 500)
+
+## Opener-generator
+- Component: frontend/src/components/OpenerModal.jsx
+- API-client: frontend/src/utils/anthropic.js
+- API-key bewaard in localStorage key mensys_anthropic_api_key
+- Direct browser-access via anthropic-dangerous-direct-browser-access
+  header. Alleen veilig voor single-user lokale app.
+- Opslaan als notitie voegt met datum-prefix toe aan notes/notities
+
+## Dagelijkse checklist
+- Component: frontend/src/components/DagelijkseChecklist.jsx
+- localStorage key: mensys_dagelijkse_checklist_{YYYY-MM-DD}
+- Reset elke dag automatisch (key verandert per datum)
+- 3 blokken: Ochtend, Uitreik, Einde dag
+- Navigeert naar Signalen/YALC/Inkopers tabs
+
+## Status-history
+- Elk contact en reseller heeft optioneel statusHistory array:
+  [{ status, datum }]
+- updateContact (utils/storage.js) en updateReseller (store/
+  resellersStore.js) appenden automatisch bij status-wijziging
+- Gebruikt door WeekGoals voor 7-daagse tellingen

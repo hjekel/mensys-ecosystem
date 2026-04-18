@@ -279,3 +279,17 @@
   font-style: italic;
   cursor: not-allowed;
 }
+
+.openerBtn {
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: var(--radius-sm);
+  color: var(--color-white);
+  background: var(--color-orange);
+  font-weight: 600;
+  transition: background 0.15s;
+}
+
+.openerBtn:hover {
+  background: #c44208;
+}

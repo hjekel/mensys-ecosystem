@@ -27,6 +27,19 @@ export function generateId() {
   return `c_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+export function updateContact(contacts, id, values) {
+  const nowIso = new Date().toISOString();
+  return contacts.map((c) => {
+    if (c.id !== id) return c;
+    const next = { ...c, ...values, updatedAt: nowIso };
+    if (values.status && values.status !== c.status && !values.statusHistory) {
+      const history = Array.isArray(c.statusHistory) ? c.statusHistory : [];
+      next.statusHistory = [...history, { status: values.status, datum: nowIso }];
+    }
+    return next;
+  });
+}
+
 export function mergeContacts(existing, incoming) {
   const byLinkedIn = new Map();
   const byKey = new Map();

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import FilterDropdown from '../components/FilterDropdown.jsx';
 import ContactDetailPanel from '../components/ContactDetailPanel.jsx';
 import ResellerDetailPanel from '../components/ResellerDetailPanel.jsx';
+import OpenerModal from '../components/OpenerModal.jsx';
+import { updateContact } from '../utils/storage.js';
 import {
   fetchAllSignalen,
   matchCompanies,
@@ -39,6 +41,9 @@ export default function SignalenPage({ contacts, setContacts, resellers, setRese
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
   const [detail, setDetail] = useState(null);
   const [detailSource, setDetailSource] = useState(null);
+  const [openerContext, setOpenerContext] = useState(null);
+  const [openerTargetId, setOpenerTargetId] = useState(null);
+  const [openerTargetSource, setOpenerTargetSource] = useState(null);
   const initRef = useRef(false);
 
   const topCompanies = useMemo(() => {
@@ -138,10 +143,7 @@ export default function SignalenPage({ contacts, setContacts, resellers, setRese
   // Inkoper detail handlers
   function handleInkoperStatusChange(contact, newStatus) {
     if (contact.status === newStatus) return;
-    const nowIso = new Date().toISOString();
-    setContacts((prev) => prev.map((c) =>
-      c.id === contact.id ? { ...c, status: newStatus, updatedAt: nowIso } : c,
-    ));
+    setContacts((prev) => updateContact(prev, contact.id, { status: newStatus }));
     setDetail((d) => (d && d.id === contact.id ? { ...d, status: newStatus } : d));
   }
 
@@ -167,6 +169,56 @@ export default function SignalenPage({ contacts, setContacts, resellers, setRese
     setResellers((prev) => deleteReseller(prev, reseller.id));
     setDetail(null);
     setDetailSource(null);
+  }
+
+  function openOpenerForSignal(signal) {
+    const first = (signal.gekoppeld || [])[0];
+    if (!first) return;
+    const lower = first.toLowerCase();
+    const inkoper = contacts.find((c) => (c.company || '').toLowerCase() === lower);
+    if (inkoper) {
+      const naam = `${inkoper.firstName || ''} ${inkoper.lastName || ''}`.trim();
+      setOpenerContext({
+        naam,
+        functie: inkoper.jobTitle || '',
+        bedrijf: inkoper.company || '',
+        signaal: `${signal.titel}${signal.samenvatting ? ' - ' + signal.samenvatting : ''}`,
+        doelgroep: 'inkoper',
+      });
+      setOpenerTargetId(inkoper.id);
+      setOpenerTargetSource('inkopers');
+      return;
+    }
+    const reseller = resellers.find((r) => (r.bedrijf || '').toLowerCase() === lower);
+    if (reseller) {
+      const naam = `${reseller.voornaam || ''} ${reseller.achternaam || ''}`.trim();
+      setOpenerContext({
+        naam,
+        functie: reseller.functietitel || '',
+        bedrijf: reseller.bedrijf || '',
+        signaal: `${signal.titel}${signal.samenvatting ? ' - ' + signal.samenvatting : ''}`,
+        doelgroep: 'reseller',
+      });
+      setOpenerTargetId(reseller.id);
+      setOpenerTargetSource('resellers');
+    }
+  }
+
+  function handleSaveOpenerAsNotitie(text) {
+    if (!openerTargetId) return;
+    const stamp = new Date().toLocaleDateString('nl-NL');
+    const prefix = `Opener (${stamp}):\n`;
+    if (openerTargetSource === 'inkopers') {
+      const c = contacts.find((x) => x.id === openerTargetId);
+      if (!c) return;
+      const combined = c.notes ? `${c.notes}\n\n${prefix}${text}` : `${prefix}${text}`;
+      setContacts((prev) => updateContact(prev, openerTargetId, { notes: combined }));
+    } else if (openerTargetSource === 'resellers') {
+      const r = resellers.find((x) => x.id === openerTargetId);
+      if (!r) return;
+      const combined = r.notities ? `${r.notities}\n\n${prefix}${text}` : `${prefix}${text}`;
+      setResellers((prev) => updateReseller(prev, openerTargetId, { notities: combined }));
+    }
   }
 
   return (
@@ -269,6 +321,8 @@ export default function SignalenPage({ contacts, setContacts, resellers, setRese
             onToggleGelezen={() => updateSignal(s.id, { gelezen: !s.gelezen })}
             onToggleOpgeslagen={() => updateSignal(s.id, { opgeslagen: !s.opgeslagen })}
             onCompanyClick={openCompanyDetail}
+            onOpenerClick={() => openOpenerForSignal(s)}
+            canOpener={(s.gekoppeld || []).length > 0}
           />
         ))}
       </div>
@@ -290,11 +344,22 @@ export default function SignalenPage({ contacts, setContacts, resellers, setRese
           onSave={handleResellerSave}
         />
       )}
+
+      <OpenerModal
+        open={Boolean(openerContext)}
+        context={openerContext}
+        onClose={() => {
+          setOpenerContext(null);
+          setOpenerTargetId(null);
+          setOpenerTargetSource(null);
+        }}
+        onSaveAsNotitie={handleSaveOpenerAsNotitie}
+      />
     </div>
   );
 }
 
-function SignalCard({ signal, onToggleGelezen, onToggleOpgeslagen, onCompanyClick }) {
+function SignalCard({ signal, onToggleGelezen, onToggleOpgeslagen, onCompanyClick, onOpenerClick, canOpener }) {
   const colors = TYPE_COLORS[signal.type] || TYPE_COLORS.bedrijfsnieuws;
   return (
     <article className={`${styles.card} ${signal.gelezen ? styles.cardRead : ''}`}>
@@ -348,9 +413,20 @@ function SignalCard({ signal, onToggleGelezen, onToggleOpgeslagen, onCompanyClic
         >
           {signal.opgeslagen ? 'Opgeslagen' : 'Bewaar'}
         </button>
-        <span className={styles.actionDisabled} title="Beschikbaar in Fase 2">
-          Gebruik als opener
-        </span>
+        {canOpener ? (
+          <button
+            type="button"
+            className={styles.openerBtn}
+            onClick={onOpenerClick}
+            title="Genereer opener met Claude"
+          >
+            Gebruik als opener
+          </button>
+        ) : (
+          <span className={styles.actionDisabled} title="Koppel eerst een bedrijf om een opener te kunnen genereren">
+            Gebruik als opener
+          </span>
+        )}
       </div>
     </article>
   );

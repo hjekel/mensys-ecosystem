@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import FilterDropdown from '../components/FilterDropdown.jsx';
 import ContactDetailPanel from '../components/ContactDetailPanel.jsx';
 import ResellerDetailPanel from '../components/ResellerDetailPanel.jsx';
+import OpenerModal from '../components/OpenerModal.jsx';
+import WeekGoals from '../components/WeekGoals.jsx';
 import {
   rankInkopers,
   rankResellers,
@@ -10,7 +12,9 @@ import {
 } from '../utils/lhf.js';
 import { contactsToCsv, downloadCsv } from '../utils/csvParser.js';
 import { resellersToCsv } from '../utils/resellerCsv.js';
+import { updateContact } from '../utils/storage.js';
 import { updateReseller, deleteReseller } from '../store/resellersStore.js';
+import { loadSignalen } from '../utils/signaalFetcher.js';
 import styles from './YalcPage.module.css';
 
 const BANDS = ['Hot', 'Warm', 'Lauw', 'Koud'];
@@ -24,6 +28,8 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
   const [band, setBand] = useState('');
 
   const [detail, setDetail] = useState(null);
+  const [openerContext, setOpenerContext] = useState(null);
+  const [openerTargetId, setOpenerTargetId] = useState(null);
 
   const ranked = useMemo(() => {
     if (source === 'inkopers') return rankInkopers(contacts);
@@ -116,10 +122,7 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
   // Inkopers detail panel handlers
   function handleInkoperStatusChange(contact, newStatus) {
     if (contact.status === newStatus) return;
-    const nowIso = new Date().toISOString();
-    setContacts((prev) => prev.map((c) =>
-      c.id === contact.id ? { ...c, status: newStatus, updatedAt: nowIso } : c,
-    ));
+    setContacts((prev) => updateContact(prev, contact.id, { status: newStatus }));
     setDetail((d) => (d && d.id === contact.id ? { ...d, status: newStatus } : d));
   }
 
@@ -145,8 +148,49 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
     setDetail(null);
   }
 
+  function findSignalForCompany(name) {
+    if (!name) return null;
+    const lower = name.toLowerCase();
+    const all = loadSignalen();
+    const match = all.find((s) => (s.gekoppeld || []).some((g) => String(g).toLowerCase() === lower));
+    if (!match) return null;
+    return `${match.titel}${match.samenvatting ? ' - ' + match.samenvatting : ''}`;
+  }
+
+  function openOpener(e, rec) {
+    e.stopPropagation();
+    const naam = source === 'inkopers'
+      ? `${rec.firstName || ''} ${rec.lastName || ''}`.trim()
+      : `${rec.voornaam || ''} ${rec.achternaam || ''}`.trim();
+    const functie = source === 'inkopers' ? (rec.jobTitle || '') : (rec.functietitel || '');
+    const bedrijf = source === 'inkopers' ? (rec.company || '') : (rec.bedrijf || '');
+    const signaal = findSignalForCompany(bedrijf);
+    const doelgroep = source === 'inkopers' ? 'inkoper' : 'reseller';
+    setOpenerContext({ naam, functie, bedrijf, signaal, doelgroep });
+    setOpenerTargetId(rec.id);
+  }
+
+  function handleSaveOpenerAsNotitie(text) {
+    if (!openerTargetId) return;
+    const stamp = new Date().toLocaleDateString('nl-NL');
+    const prefix = `Opener (${stamp}):\n`;
+    if (source === 'inkopers') {
+      const c = contacts.find((x) => x.id === openerTargetId);
+      if (!c) return;
+      const combined = c.notes ? `${c.notes}\n\n${prefix}${text}` : `${prefix}${text}`;
+      setContacts((prev) => updateContact(prev, openerTargetId, { notes: combined }));
+    } else {
+      const r = resellers.find((x) => x.id === openerTargetId);
+      if (!r) return;
+      const combined = r.notities ? `${r.notities}\n\n${prefix}${text}` : `${prefix}${text}`;
+      setResellers((prev) => updateReseller(prev, openerTargetId, { notities: combined }));
+    }
+  }
+
   return (
     <div className={styles.page}>
+      <WeekGoals contacts={contacts} resellers={resellers} />
+
       <section className={styles.hero}>
         <div className={styles.heroText}>
           <h1 className={styles.title}>YALC</h1>
@@ -284,12 +328,13 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
               <th>{source === 'inkopers' ? 'Land' : 'Locatie'}</th>
               <th>{source === 'inkopers' ? 'Sector' : 'Type'}</th>
               <th>Signalen</th>
+              <th className={styles.actionCol}>Actie</th>
             </tr>
           </thead>
           <tbody>
             {visible.length === 0 && (
               <tr>
-                <td colSpan={9} className={styles.empty}>
+                <td colSpan={10} className={styles.empty}>
                   Geen records. Wijzig filters of importeer data op de {source === 'inkopers' ? 'Inkopers' : 'Resellers'} tab.
                 </td>
               </tr>
@@ -342,6 +387,16 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
                       )}
                     </div>
                   </td>
+                  <td className={styles.actionCol} onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      className={styles.openerBtn}
+                      onClick={(e) => openOpener(e, rec)}
+                      title="Genereer opener met Claude"
+                    >
+                      Opener
+                    </button>
+                  </td>
                 </tr>
               );
             })}
@@ -366,6 +421,16 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
           onSave={handleResellerSave}
         />
       )}
+
+      <OpenerModal
+        open={Boolean(openerContext)}
+        context={openerContext}
+        onClose={() => {
+          setOpenerContext(null);
+          setOpenerTargetId(null);
+        }}
+        onSaveAsNotitie={handleSaveOpenerAsNotitie}
+      />
     </div>
   );
 }
