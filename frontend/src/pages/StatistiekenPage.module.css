@@ -20,6 +20,42 @@
   border-radius: var(--radius-md);
   padding: 20px 22px;
   box-shadow: var(--shadow-sm);
+  text-align: left;
+  width: 100%;
+}
+
+.tileClickable {
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.08s, box-shadow 0.15s;
+}
+
+.tileClickable:hover {
+  border-color: var(--color-blue);
+  box-shadow: var(--shadow-md);
+}
+
+.tileClickable:active {
+  transform: translateY(1px);
+}
+
+.barRowClickable {
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  padding: 2px 4px;
+  margin: 0 -4px;
+  transition: background 0.15s;
+}
+
+.barRowClickable:hover {
+  background: var(--color-bg);
+}
+
+.jobRowClickable {
+  cursor: pointer;
+}
+
+.jobRowClickable:hover {
+  background: var(--color-hover) !important;
 }
 
 .tileValue {

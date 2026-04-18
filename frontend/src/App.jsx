@@ -16,6 +16,18 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('welkom');
   const [inkopersFilteredCount, setInkopersFilteredCount] = useState(null);
   const [resellersFilteredCount, setResellersFilteredCount] = useState(null);
+  const [pendingInkopersFilter, setPendingInkopersFilter] = useState(null);
+  const [pendingResellersFilter, setPendingResellersFilter] = useState(null);
+
+  function navigateToInkopers(filter) {
+    setPendingInkopersFilter(filter ? { ...filter, _ts: Date.now() } : null);
+    setActiveTab('inkopers');
+  }
+
+  function navigateToResellers(filter) {
+    setPendingResellersFilter(filter ? { ...filter, _ts: Date.now() } : null);
+    setActiveTab('resellers');
+  }
 
   useEffect(() => {
     saveContacts(contacts);
@@ -52,6 +64,7 @@ export default function App() {
             contacts={contacts}
             setContacts={setContactsState}
             onFilteredCountChange={setInkopersFilteredCount}
+            initialFilter={pendingInkopersFilter}
           />
         )}
         {activeTab === 'resellers' && (
@@ -59,6 +72,7 @@ export default function App() {
             resellers={resellers}
             setResellers={setResellersState}
             onFilteredCountChange={setResellersFilteredCount}
+            initialFilter={pendingResellersFilter}
           />
         )}
         {activeTab === 'yalc' && (
@@ -70,7 +84,12 @@ export default function App() {
           />
         )}
         {activeTab === 'statistieken' && (
-          <StatistiekenPage contacts={contacts} resellers={resellers} />
+          <StatistiekenPage
+            contacts={contacts}
+            resellers={resellers}
+            onNavigateInkopers={navigateToInkopers}
+            onNavigateResellers={navigateToResellers}
+          />
         )}
       </main>
 

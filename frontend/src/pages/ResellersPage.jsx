@@ -15,7 +15,7 @@ import {
 import { applyResellerCleanup, planResellerCleanup } from '../utils/resellerCleanup.js';
 import styles from './ResellersPage.module.css';
 
-export default function ResellersPage({ resellers, setResellers, onFilteredCountChange }) {
+export default function ResellersPage({ resellers, setResellers, onFilteredCountChange, initialFilter }) {
   const [query, setQuery] = useState('');
   const [resellerType, setResellerType] = useState('');
   const [fteRange, setFteRange] = useState('');
@@ -46,6 +46,16 @@ export default function ResellersPage({ resellers, setResellers, onFilteredCount
   useEffect(() => {
     if (onFilteredCountChange) onFilteredCountChange(filtered.length);
   }, [filtered.length, onFilteredCountChange]);
+
+  useEffect(() => {
+    if (!initialFilter) return;
+    if (initialFilter.resellerType !== undefined) setResellerType(initialFilter.resellerType);
+    if (initialFilter.fteRange !== undefined) setFteRange(initialFilter.fteRange);
+    if (initialFilter.mensysFit !== undefined) setMensysFit(initialFilter.mensysFit);
+    if (initialFilter.status !== undefined) setStatus(initialFilter.status);
+    if (initialFilter.query !== undefined) setQuery(initialFilter.query);
+    if (initialFilter.view !== undefined) setView(initialFilter.view);
+  }, [initialFilter]);
 
   const facetCounts = useMemo(() => {
     const q = query.trim().toLowerCase();

@@ -11,15 +11,23 @@ import {
   RESELLER_STATUSES,
 } from '@shared/constants.js';
 
-export default function StatistiekenPage({ contacts, resellers = [] }) {
+export default function StatistiekenPage({
+  contacts,
+  resellers = [],
+  onNavigateInkopers,
+  onNavigateResellers,
+}) {
   const stats = useMemo(() => computeStats(contacts), [contacts]);
   const jobTitleStats = useMemo(() => computeJobTitles(contacts), [contacts]);
   const resellerStats = useMemo(() => computeResellerStats(resellers), [resellers]);
 
+  const goInkopers = (filter) => onNavigateInkopers && onNavigateInkopers(filter);
+  const goResellers = (filter) => onNavigateResellers && onNavigateResellers(filter);
+
   return (
     <div className={styles.page}>
       <div className={styles.tiles}>
-        <Tile label="Totaal contacten" value={stats.total} />
+        <Tile label="Totaal contacten" value={stats.total} onClick={() => goInkopers({})} />
         <Tile label="NL contacten" value={stats.nl} />
         <Tile label="Met email" value={stats.withEmail} />
         <Tile label="Met LinkedIn" value={stats.withLinkedin} />
@@ -34,6 +42,7 @@ export default function StatistiekenPage({ contacts, resellers = [] }) {
             color: SECTOR_COLORS[s],
           }))}
           total={stats.total}
+          onItemClick={(it) => goInkopers({ sector: it.label })}
         />
 
         <BarCard
@@ -44,6 +53,7 @@ export default function StatistiekenPage({ contacts, resellers = [] }) {
             color: '#003087',
           }))}
           total={stats.total}
+          onItemClick={(it) => goInkopers({ fte: it.label })}
         />
 
         <BarCard
@@ -54,18 +64,26 @@ export default function StatistiekenPage({ contacts, resellers = [] }) {
             color: statusColor(s),
           }))}
           total={stats.total}
+          onItemClick={(it) => goInkopers({ status: it.label })}
         />
       </div>
 
-      <JobTitlesCard items={jobTitleStats} />
+      <JobTitlesCard
+        items={jobTitleStats}
+        onItemClick={(it) => goInkopers({ jobTitle: it.label })}
+      />
 
       <div className={styles.sectionDivider}>
         <h2 className={styles.sectionTitle}>Resellers</h2>
       </div>
 
       <div className={styles.tiles}>
-        <Tile label="Totaal resellers" value={resellerStats.total} />
-        <Tile label="Partners" value={resellerStats.partners} />
+        <Tile label="Totaal resellers" value={resellerStats.total} onClick={() => goResellers({})} />
+        <Tile
+          label="Partners"
+          value={resellerStats.partners}
+          onClick={() => goResellers({ status: 'Partner' })}
+        />
         <Tile label="Met email" value={resellerStats.withEmail} />
         <Tile
           label="Email dekking"
@@ -91,6 +109,7 @@ export default function StatistiekenPage({ contacts, resellers = [] }) {
             color: MENSYS_FIT_COLORS[s].fg,
           }))}
           total={resellerStats.total}
+          onItemClick={(it) => goResellers({ mensysFit: it.label })}
         />
 
         <BarCard
@@ -101,6 +120,7 @@ export default function StatistiekenPage({ contacts, resellers = [] }) {
             color: '#003087',
           }))}
           total={resellerStats.total}
+          onItemClick={(it) => goResellers({ resellerType: it.label })}
         />
 
         <BarCard
@@ -111,13 +131,14 @@ export default function StatistiekenPage({ contacts, resellers = [] }) {
             color: resellerStatusColor(s),
           }))}
           total={resellerStats.total}
+          onItemClick={(it) => goResellers({ status: it.label })}
         />
       </div>
     </div>
   );
 }
 
-function JobTitlesCard({ items }) {
+function JobTitlesCard({ items, onItemClick }) {
   const [query, setQuery] = useState('');
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -152,7 +173,11 @@ function JobTitlesCard({ items }) {
             </thead>
             <tbody>
               {filtered.map((it, idx) => (
-                <tr key={it.label}>
+                <tr
+                  key={it.label}
+                  className={onItemClick ? styles.jobRowClickable : ''}
+                  onClick={onItemClick ? () => onItemClick(it) : undefined}
+                >
                   <td className={styles.jobRank}>{idx + 1}</td>
                   <td>{it.label}</td>
                   <td className={styles.jobCount}>{it.value.toLocaleString('nl-NL')}</td>
@@ -166,19 +191,31 @@ function JobTitlesCard({ items }) {
   );
 }
 
-function Tile({ label, value, suffix }) {
-  return (
-    <div className={styles.tile}>
+function Tile({ label, value, suffix, onClick }) {
+  const content = (
+    <>
       <div className={styles.tileValue}>
         {value.toLocaleString('nl-NL')}
         {suffix && <span className={styles.tileSuffix}>{suffix}</span>}
       </div>
       <div className={styles.tileLabel}>{label}</div>
-    </div>
+    </>
   );
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        className={`${styles.tile} ${styles.tileClickable}`}
+        onClick={onClick}
+      >
+        {content}
+      </button>
+    );
+  }
+  return <div className={styles.tile}>{content}</div>;
 }
 
-function BarCard({ title, items, total }) {
+function BarCard({ title, items, total, onItemClick }) {
   const max = Math.max(1, ...items.map((i) => i.value));
   return (
     <div className={styles.card}>
@@ -187,8 +224,23 @@ function BarCard({ title, items, total }) {
         {items.map((it) => {
           const pct = total > 0 ? Math.round((it.value / total) * 100) : 0;
           const width = max > 0 ? (it.value / max) * 100 : 0;
+          const clickable = onItemClick && it.value > 0;
           return (
-            <div className={styles.barRow} key={it.label}>
+            <div
+              className={`${styles.barRow} ${clickable ? styles.barRowClickable : ''}`}
+              key={it.label}
+              onClick={clickable ? () => onItemClick(it) : undefined}
+              role={clickable ? 'button' : undefined}
+              tabIndex={clickable ? 0 : undefined}
+              onKeyDown={clickable
+                ? (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onItemClick(it);
+                    }
+                  }
+                : undefined}
+            >
               <div className={styles.barLabel} title={it.label}>{it.label}</div>
               <div className={styles.barTrack}>
                 <div

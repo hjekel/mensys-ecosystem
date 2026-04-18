@@ -10,7 +10,7 @@ import { generateId } from '../utils/storage.js';
 import { applyCleanup, planCleanup } from '../utils/cleanup.js';
 import styles from './InkopersPage.module.css';
 
-export default function InkopersPage({ contacts, setContacts, onFilteredCountChange }) {
+export default function InkopersPage({ contacts, setContacts, onFilteredCountChange, initialFilter }) {
   const [query, setQuery] = useState('');
   const [sector, setSector] = useState('');
   const [fte, setFte] = useState('');
@@ -41,6 +41,16 @@ export default function InkopersPage({ contacts, setContacts, onFilteredCountCha
   useEffect(() => {
     if (onFilteredCountChange) onFilteredCountChange(filtered.length);
   }, [filtered.length, onFilteredCountChange]);
+
+  useEffect(() => {
+    if (!initialFilter) return;
+    if (initialFilter.sector !== undefined) setSector(initialFilter.sector);
+    if (initialFilter.fte !== undefined) setFte(initialFilter.fte);
+    if (initialFilter.status !== undefined) setStatus(initialFilter.status);
+    if (initialFilter.jobTitle !== undefined) setJobTitle(initialFilter.jobTitle);
+    if (initialFilter.query !== undefined) setQuery(initialFilter.query);
+    if (initialFilter.view !== undefined) setView(initialFilter.view);
+  }, [initialFilter]);
 
   const facetCounts = useMemo(() => {
     const q = query.trim().toLowerCase();
