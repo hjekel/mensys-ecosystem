@@ -138,6 +138,17 @@ npm start        # start backend
 - Kanban kolommen: Nieuw | Warm | Benaderd | Gesprek gevoerd | Partner
 - Datastructuur: zie resellersStore.js
 
+## Signalen tab
+- Page: frontend/src/pages/SignalenPage.jsx
+- Fetcher: frontend/src/utils/signaalFetcher.js
+- localStorage keys: mensys_signalen, mensys_signalen_lastFetch
+- Auto-refresh bij tab-open als laatste fetch meer dan 4 uur geleden
+- Bronnen: TenderNed JSON, 4 vakblad RSS, 5 AI-tools RSS, Google News
+  per top 20 bedrijven op YALC-score
+- Alle fetches via https://api.allorigins.win/raw?url= als CORS proxy
+- Matching: titel en samenvatting tegen alle bedrijven in inkopers en
+  resellers (case-insensitive substring, min 4 chars)
+
 ## YALC tab
 - Page: frontend/src/pages/YalcPage.jsx
 - Scoring: frontend/src/utils/lhf.js

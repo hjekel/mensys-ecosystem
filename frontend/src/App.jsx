@@ -4,6 +4,7 @@ import Tabs from './components/Tabs.jsx';
 import WelkomPage from './pages/WelkomPage.jsx';
 import InkopersPage from './pages/InkopersPage.jsx';
 import ResellersPage from './pages/ResellersPage.jsx';
+import SignalenPage from './pages/SignalenPage.jsx';
 import YalcPage from './pages/YalcPage.jsx';
 import StatistiekenPage from './pages/StatistiekenPage.jsx';
 import { loadContacts, saveContacts } from './utils/storage.js';
@@ -39,6 +40,7 @@ export default function App() {
 
   const tabs = [
     { id: 'welkom', label: 'Welkom' },
+    { id: 'signalen', label: 'Signalen' },
     { id: 'inkopers', label: 'Inkopers', count: inkopersFilteredCount ?? contacts.length },
     { id: 'resellers', label: 'Resellers', count: resellersFilteredCount ?? resellers.length },
     { id: 'yalc', label: 'YALC' },
@@ -73,6 +75,14 @@ export default function App() {
             setResellers={setResellersState}
             onFilteredCountChange={setResellersFilteredCount}
             initialFilter={pendingResellersFilter}
+          />
+        )}
+        {activeTab === 'signalen' && (
+          <SignalenPage
+            contacts={contacts}
+            setContacts={setContactsState}
+            resellers={resellers}
+            setResellers={setResellersState}
           />
         )}
         {activeTab === 'yalc' && (
