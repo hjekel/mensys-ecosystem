@@ -4,6 +4,7 @@ import ContactDetailPanel from '../components/ContactDetailPanel.jsx';
 import ResellerDetailPanel from '../components/ResellerDetailPanel.jsx';
 import OpenerModal from '../components/OpenerModal.jsx';
 import WeekGoals from '../components/WeekGoals.jsx';
+import YalcGewichtenModal from '../components/YalcGewichtenModal.jsx';
 import {
   rankInkopers,
   rankResellers,
@@ -15,6 +16,7 @@ import { resellersToCsv } from '../utils/resellerCsv.js';
 import { updateContact } from '../utils/storage.js';
 import { updateReseller, deleteReseller } from '../store/resellersStore.js';
 import { loadSignalen } from '../utils/signaalFetcher.js';
+import { getGewichten } from '../utils/yalcInstellingen.js';
 import styles from './YalcPage.module.css';
 
 const BANDS = ['Hot', 'Warm', 'Lauw', 'Koud'];
@@ -30,11 +32,13 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
   const [detail, setDetail] = useState(null);
   const [openerContext, setOpenerContext] = useState(null);
   const [openerTargetId, setOpenerTargetId] = useState(null);
+  const [gewichten, setGewichten] = useState(() => getGewichten());
+  const [gewichtenOpen, setGewichtenOpen] = useState(false);
 
   const ranked = useMemo(() => {
-    if (source === 'inkopers') return rankInkopers(contacts);
+    if (source === 'inkopers') return rankInkopers(contacts, gewichten);
     return rankResellers(resellers);
-  }, [source, contacts, resellers]);
+  }, [source, contacts, resellers, gewichten]);
 
   const countryOptions = useMemo(() => {
     const counts = new Map();
@@ -287,6 +291,17 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
           ))}
         </div>
 
+        {source === 'inkopers' && (
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => setGewichtenOpen(true)}
+            title="Pas de YALC-scoringsgewichten aan"
+          >
+            Scoringsregels aanpassen
+          </button>
+        )}
+
         <button type="button" className="btn btn-ghost" onClick={handleExport}>
           Exporteer top {Math.min(topN, filtered.length)} CSV
         </button>
@@ -430,6 +445,16 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
           setOpenerTargetId(null);
         }}
         onSaveAsNotitie={handleSaveOpenerAsNotitie}
+      />
+
+      <YalcGewichtenModal
+        open={gewichtenOpen}
+        gewichten={gewichten}
+        onClose={() => setGewichtenOpen(false)}
+        onSave={(next) => {
+          setGewichten(next);
+          setGewichtenOpen(false);
+        }}
       />
     </div>
   );

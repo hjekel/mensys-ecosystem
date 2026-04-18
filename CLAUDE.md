@@ -152,10 +152,15 @@ npm start        # start backend
 ## YALC tab
 - Page: frontend/src/pages/YalcPage.jsx
 - Scoring: frontend/src/utils/lhf.js
+- Gewichten (inkopers): frontend/src/utils/yalcInstellingen.js,
+  localStorage key mensys_yalc_gewichten, configureerbaar via
+  YalcGewichtenModal (6 sliders 0-30 per criterium, totaalteller
+  streeft naar 100)
 - Low Hanging Fruit index uit 100 per Inkoper of Reseller
 - Bands: Hot 80+, Warm 60-79, Lauw 40-59, Koud <40
 - Signalen: email, LinkedIn, FTE-match, sector/priority, status Warm,
-  prio Hoog (Inkopers) of Mensys Fit (Resellers)
+  prio Hoog (Inkopers, gewichten aanpasbaar) of Mensys Fit (Resellers,
+  gewichten vast)
 - Week-doelen widget bovenaan: connecties, DMs, reacties, gesprekken,
   partners van afgelopen 7 dagen (uit statusHistory)
 - Opener-knop per rij: opent OpenerModal, roept Anthropic API aan

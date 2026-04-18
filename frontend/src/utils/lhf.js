@@ -1,6 +1,9 @@
 // Low Hanging Fruit scoring, geinspireerd op YALC GTM OS.
 // Elk contact/reseller krijgt een score uit 100, opgebouwd uit signalen.
 // Signalen zijn bewijs van benaderbaarheid en Mensys-fit.
+// Inkoper-gewichten zijn configureerbaar via yalcInstellingen.js.
+
+import { getGewichten } from './yalcInstellingen.js';
 
 const PRIORITY_SECTORS = new Set([
   'Zorg',
@@ -26,33 +29,34 @@ const IDEAL_FTE_RESELLER = new Set([
 
 const WARM_STATUSES = new Set(['Warm', 'Gesprek gevoerd']);
 
-export function scoreInkoper(c) {
+export function scoreInkoper(c, gewichten) {
+  const g = gewichten || getGewichten();
   const signals = [];
   let score = 0;
 
-  if (c.email) {
-    score += 20;
-    signals.push({ label: 'Email aanwezig', points: 20 });
+  if (c.email && g.email > 0) {
+    score += g.email;
+    signals.push({ label: 'Email aanwezig', points: g.email });
   }
-  if (c.linkedinUrl) {
-    score += 20;
-    signals.push({ label: 'LinkedIn aanwezig', points: 20 });
+  if (c.linkedinUrl && g.linkedin > 0) {
+    score += g.linkedin;
+    signals.push({ label: 'LinkedIn aanwezig', points: g.linkedin });
   }
-  if (IDEAL_FTE_INKOPER.has(c.fteCategory)) {
-    score += 15;
-    signals.push({ label: `FTE ${c.fteCategory}`, points: 15 });
+  if (IDEAL_FTE_INKOPER.has(c.fteCategory) && g.fte > 0) {
+    score += g.fte;
+    signals.push({ label: `FTE ${c.fteCategory}`, points: g.fte });
   }
-  if (PRIORITY_SECTORS.has(c.sector)) {
-    score += 15;
-    signals.push({ label: `Sector ${c.sector}`, points: 15 });
+  if (PRIORITY_SECTORS.has(c.sector) && g.sector > 0) {
+    score += g.sector;
+    signals.push({ label: `Sector ${c.sector}`, points: g.sector });
   }
-  if (WARM_STATUSES.has(c.status)) {
-    score += 20;
-    signals.push({ label: `Status ${c.status}`, points: 20 });
+  if (WARM_STATUSES.has(c.status) && g.status > 0) {
+    score += g.status;
+    signals.push({ label: `Status ${c.status}`, points: g.status });
   }
-  if (c.priority === 'Hoog') {
-    score += 10;
-    signals.push({ label: 'Prioriteit Hoog', points: 10 });
+  if (c.priority === 'Hoog' && g.prioriteit > 0) {
+    score += g.prioriteit;
+    signals.push({ label: 'Prioriteit Hoog', points: g.prioriteit });
   }
 
   return { score, signals };
@@ -96,9 +100,10 @@ export function scoreReseller(r) {
   return { score, signals };
 }
 
-export function rankInkopers(contacts) {
+export function rankInkopers(contacts, gewichten) {
+  const g = gewichten || getGewichten();
   return contacts
-    .map((c) => ({ record: c, ...scoreInkoper(c) }))
+    .map((c) => ({ record: c, ...scoreInkoper(c, g) }))
     .sort((a, b) => b.score - a.score);
 }
 
