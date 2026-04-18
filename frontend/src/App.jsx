@@ -6,6 +6,7 @@ import InkopersPage from './pages/InkopersPage.jsx';
 import ResellersPage from './pages/ResellersPage.jsx';
 import SignalenPage from './pages/SignalenPage.jsx';
 import YalcPage from './pages/YalcPage.jsx';
+import EcosysteemPage from './pages/EcosysteemPage.jsx';
 import StatistiekenPage from './pages/StatistiekenPage.jsx';
 import { loadContacts, saveContacts } from './utils/storage.js';
 import { getResellers, saveResellers } from './store/resellersStore.js';
@@ -44,6 +45,7 @@ export default function App() {
     { id: 'inkopers', label: 'Inkopers', count: inkopersFilteredCount ?? contacts.length },
     { id: 'resellers', label: 'Resellers', count: resellersFilteredCount ?? resellers.length },
     { id: 'yalc', label: 'YALC' },
+    { id: 'ecosysteem', label: 'Ecosysteem' },
     { id: 'statistieken', label: 'Statistieken' },
   ];
 
@@ -87,6 +89,14 @@ export default function App() {
         )}
         {activeTab === 'yalc' && (
           <YalcPage
+            contacts={contacts}
+            setContacts={setContactsState}
+            resellers={resellers}
+            setResellers={setResellersState}
+          />
+        )}
+        {activeTab === 'ecosysteem' && (
+          <EcosysteemPage
             contacts={contacts}
             setContacts={setContactsState}
             resellers={resellers}

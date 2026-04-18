@@ -176,6 +176,21 @@ npm start        # start backend
 - 3 blokken: Ochtend, Uitreik, Einde dag
 - Navigeert naar Signalen/YALC/Inkopers tabs
 
+## Ecosysteem tab
+- Page: frontend/src/pages/EcosysteemPage.jsx
+- SVG radiale visualisatie (geen D3, puur SVG + React) met drie ringen
+- Centrum: Mensys node (48 radius, kleur #003087)
+- Ring 1 (r=200): 5 distributeurs (ALSO, Copaco, Ingram Micro,
+  TD SYNNEX, DSD Europe). Grijs #5c6a85, gestippelde verbindingslijnen
+- Ring 2 (r=350): top N resellers (default 50, max 50) op YALC-score.
+  Kleur per Mensys Fit, grootte proportioneel aan score
+- Ring 3 (r=480): top N inkopers (default 30, max 30) op YALC-score.
+  Kleur per sector
+- Filter-balk: sector, status
+- Config modal: sliders voor max nodes, Mensys Fit checkboxes,
+  distributeurs-toggle
+- Hover tooltip + klik opent detail-panel
+
 ## Status-history
 - Elk contact en reseller heeft optioneel statusHistory array:
   [{ status, datum }]
