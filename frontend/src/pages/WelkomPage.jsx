@@ -1,5 +1,6 @@
 import DagelijkseChecklist from '../components/DagelijkseChecklist.jsx';
 import WorkflowSop from '../components/WorkflowSop.jsx';
+import MarktpositieSection from '../components/MarktpositieSection.jsx';
 import { DEFAULT_INSTELLINGEN } from '../utils/instellingen.js';
 import styles from './WelkomPage.module.css';
 
@@ -129,6 +130,8 @@ export default function WelkomPage({
           />
         </div>
       </section>
+
+      <MarktpositieSection />
     </div>
   );
 }

@@ -201,6 +201,14 @@ npm start        # start backend
 - Wijzigt propositie-banner (kleur plus tekst), Welkom-titel en footer
 - Te openen via tandwiel-icoon rechtsboven op Welkom-tab
 
+## Marktpositie sectie
+- Component: frontend/src/components/MarktpositieSection.jsx
+- Twee uitklapbare blokken op Welkom-tab: Red Ocean (ingeklapt default)
+  en Blue Ocean (uitgeklapt default)
+- Red Ocean: twee-kolom tabel (De Red Ocean versus Mensys nu)
+- Blue Ocean: vier kansen-kaartjes (AI-tools specialist, Pre-finance
+  voor resellers, Martin-type directeur-segment, Coopetitie-model)
+
 ## Workflow SOP
 - Component: frontend/src/components/WorkflowSop.jsx
 - Drie uitklapbare blokken op Welkom-tab: Dagelijks (10 min),
