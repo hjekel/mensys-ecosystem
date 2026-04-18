@@ -137,3 +137,11 @@ npm start        # start backend
 - Card: frontend/src/components/ResellerCard.jsx
 - Kanban kolommen: Nieuw | Warm | Benaderd | Gesprek gevoerd | Partner
 - Datastructuur: zie resellersStore.js
+
+## YALC tab
+- Page: frontend/src/pages/YalcPage.jsx
+- Scoring: frontend/src/utils/lhf.js
+- Low Hanging Fruit index uit 100 per Inkoper of Reseller
+- Bands: Hot 80+, Warm 60-79, Lauw 40-59, Koud <40
+- Signalen: email, LinkedIn, FTE-match, sector/priority, status Warm,
+  prio Hoog (Inkopers) of Mensys Fit (Resellers)

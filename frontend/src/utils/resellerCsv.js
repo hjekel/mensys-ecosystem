@@ -7,15 +7,31 @@ import {
   MENSYS_FIT_SCORES,
 } from '@shared/constants.js';
 
+const FIELD_ALIASES = {
+  bedrijf: ['bedrijf', 'company', 'bedrijfsnaam', 'organisatie', 'reseller'],
+  voornaam: ['voornaam', 'first name', 'firstname', 'first_name'],
+  achternaam: ['achternaam', 'last name', 'lastname', 'last_name', 'surname'],
+  functietitel: ['functietitel', 'functie', 'job title', 'jobtitle', 'job_title', 'title'],
+  email: ['email', 'e-mail', 'email address', 'mail'],
+  linkedin: ['linkedin', 'linkedin url', 'linkedinurl', 'linkedin_url', 'profile url', 'li url'],
+  fteRange: ['fterange', 'fte range', 'fte', 'fte_range', 'employees'],
+  resellerType: ['resellertype', 'reseller type', 'reseller_type', 'type'],
+  mensysFit: ['mensysfit', 'mensys fit', 'mensys_fit', 'fit', 'fit_score'],
+  bron: ['bron', 'source'],
+  locatie: ['locatie', 'location', 'stad', 'regio', 'city'],
+  website: ['website', 'url', 'site', 'company website'],
+  status: ['status', 'stage'],
+  keywords: ['keywords', 'keyword', 'tags'],
+  notities: ['notities', 'notes', 'note', 'comment', 'commentaar'],
+};
+
 function pickValue(row, key) {
-  const direct = row[key];
-  if (direct !== undefined && direct !== null && String(direct).trim() !== '') {
-    return String(direct).trim();
-  }
-  const lowerKey = key.toLowerCase();
+  const aliases = FIELD_ALIASES[key] || [key.toLowerCase()];
+  const aliasSet = new Set(aliases.map((a) => a.toLowerCase().trim()));
   for (const [k, v] of Object.entries(row)) {
-    if (String(k).toLowerCase().trim() === lowerKey) {
-      return String(v ?? '').trim();
+    if (aliasSet.has(String(k).toLowerCase().trim())) {
+      const str = String(v ?? '').trim();
+      if (str !== '') return str;
     }
   }
   return '';

@@ -4,6 +4,7 @@ import Tabs from './components/Tabs.jsx';
 import WelkomPage from './pages/WelkomPage.jsx';
 import InkopersPage from './pages/InkopersPage.jsx';
 import ResellersPage from './pages/ResellersPage.jsx';
+import YalcPage from './pages/YalcPage.jsx';
 import StatistiekenPage from './pages/StatistiekenPage.jsx';
 import { loadContacts, saveContacts } from './utils/storage.js';
 import { getResellers, saveResellers } from './store/resellersStore.js';
@@ -28,6 +29,7 @@ export default function App() {
     { id: 'welkom', label: 'Welkom' },
     { id: 'inkopers', label: 'Inkopers', count: inkopersFilteredCount ?? contacts.length },
     { id: 'resellers', label: 'Resellers', count: resellersFilteredCount ?? resellers.length },
+    { id: 'yalc', label: 'YALC' },
     { id: 'statistieken', label: 'Statistieken' },
   ];
 
@@ -57,6 +59,9 @@ export default function App() {
             setResellers={setResellersState}
             onFilteredCountChange={setResellersFilteredCount}
           />
+        )}
+        {activeTab === 'yalc' && (
+          <YalcPage contacts={contacts} resellers={resellers} />
         )}
         {activeTab === 'statistieken' && (
           <StatistiekenPage contacts={contacts} resellers={resellers} />

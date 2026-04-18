@@ -44,6 +44,7 @@ export default function ResellerListView({ resellers, onOpen }) {
       <table className={styles.table}>
         <thead>
           <tr>
+            <th className={styles.noSort}><span>#</span></th>
             {COLUMNS.map((col) => (
               <th
                 key={col.key}
@@ -61,13 +62,14 @@ export default function ResellerListView({ resellers, onOpen }) {
         <tbody>
           {sorted.length === 0 && (
             <tr>
-              <td colSpan={COLUMNS.length} className={styles.empty}>
+              <td colSpan={COLUMNS.length + 1} className={styles.empty}>
                 Geen resellers gevonden.
               </td>
             </tr>
           )}
-          {sorted.map((r) => (
+          {sorted.map((r, idx) => (
             <tr key={r.id} onClick={() => onOpen(r)} className={styles.row}>
+              <td className={styles.rowNum}>{idx + 1}</td>
               <td className={styles.nameCell}>{r.bedrijf || ''}</td>
               <td>{r.voornaam || ''}</td>
               <td>{r.achternaam || ''}</td>

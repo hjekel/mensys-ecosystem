@@ -44,6 +44,7 @@ export default function ListView({ contacts, onOpen }) {
       <table className={styles.table}>
         <thead>
           <tr>
+            <th className={styles.noSort}><span>#</span></th>
             {COLUMNS.map((col) => (
               <th
                 key={col.key}
@@ -61,13 +62,14 @@ export default function ListView({ contacts, onOpen }) {
         <tbody>
           {sorted.length === 0 && (
             <tr>
-              <td colSpan={COLUMNS.length} className={styles.empty}>
+              <td colSpan={COLUMNS.length + 1} className={styles.empty}>
                 Geen contacten gevonden.
               </td>
             </tr>
           )}
-          {sorted.map((c) => (
+          {sorted.map((c, idx) => (
             <tr key={c.id} onClick={() => onOpen(c)} className={styles.row}>
+              <td className={styles.rowNum}>{idx + 1}</td>
               <td className={styles.dim}>{c.country || ''}</td>
               <td><SectorBadge sector={c.sector} /></td>
               <td className={styles.dim}>{c.fteCategory || ''}</td>
