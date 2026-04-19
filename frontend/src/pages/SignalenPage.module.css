@@ -116,18 +116,11 @@
   color: var(--color-text-secondary);
 }
 
-.errorBox {
-  background: #fef2f2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
-  border-radius: var(--radius-sm);
-  padding: 10px 14px;
-  font-size: 13px;
-}
-
-.errorBox ul {
-  margin: 6px 0 0 18px;
-  padding: 0;
+.sourceNote {
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-style: italic;
 }
 
 .empty {

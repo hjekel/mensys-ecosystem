@@ -18,17 +18,25 @@ const VAKBLAD_FEEDS = [
 ];
 
 const AI_FEEDS = [
-  { url: 'https://openai.com/blog/rss.xml', bron: 'OpenAI Blog' },
-  { url: 'https://www.anthropic.com/rss.xml', bron: 'Anthropic' },
-  { url: 'https://blogs.microsoft.com/ai/feed/', bron: 'Microsoft AI' },
-  { url: 'https://blog.google/products/gemini/rss/', bron: 'Google Gemini' },
-  { url: 'https://www.canva.com/newsroom/rss/', bron: 'Canva' },
+  { url: 'https://openai.com/blog/rss/', bron: 'OpenAI Blog' },
+  { url: 'https://www.anthropic.com/news/rss.xml', bron: 'Anthropic' },
+  { url: 'https://news.microsoft.com/feed/', bron: 'Microsoft News' },
+  { url: 'https://blog.google/rss/', bron: 'Google Blog' },
+  { url: 'https://huggingface.co/blog/feed.xml', bron: 'Hugging Face' },
 ];
 
+const FEED_TIMEOUT_MS = 3000;
+
 async function fetchProxied(url) {
-  const res = await fetch(CORS_PROXY + encodeURIComponent(url));
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FEED_TIMEOUT_MS);
+  try {
+    const res = await fetch(CORS_PROXY + encodeURIComponent(url), { signal: controller.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function stripHtml(s) {
@@ -93,59 +101,19 @@ async function parseFeed(url, bron, type, companyTag = null, maxItems = 10) {
   });
 }
 
-async function fetchTenderNedRaw() {
-  const url = 'https://www.tenderned.nl/papi/tenderned-rs-tns/v2/publicaties?aanbestedingsvorm=OPENBAAR&cpv=48000000,72000000,72212000,72310000&sort=publicatieDatum,desc&size=20';
-  const res = await fetchProxied(url);
-  const data = await res.json();
-  const pubs = data.results || data._embedded?.publicaties || data.content || [];
-  return pubs.slice(0, 20).map((p) => {
-    const dienst = p.aanbestedendeDienstNaam || p.opdrachtgever || '';
-    const omschrijving = p.omschrijving || p.title || p.onderwerp || 'Onbekende aanbesteding';
-    const titel = dienst ? `${dienst}: ${omschrijving}` : omschrijving;
-    const id = p.id || p.publicatieId || p.publicationId || '';
-    return {
-      id: generateId(),
-      type: 'tenderned',
-      titel,
-      samenvatting: truncate(p.samenvatting || omschrijving, 200),
-      url: id ? `https://www.tenderned.nl/aankondigingen/overzicht/${id}` : 'https://www.tenderned.nl/',
-      bron: 'TenderNed',
-      datum: safeDate(p.publicatieDatum || p.datumPublicatie),
-      gekoppeld: dienst ? [dienst] : [],
-      gelezen: false,
-      opgeslagen: false,
-    };
-  });
-}
-
-async function fetchVakbladenRaw() {
+async function fetchFeedGroup(feeds, type) {
   const results = await Promise.allSettled(
-    VAKBLAD_FEEDS.map((f) => parseFeed(f.url, f.bron, 'vakblad', null, 10)),
+    feeds.map((f) => parseFeed(f.url, f.bron, type, null, 10)),
   );
   const items = [];
-  const errors = [];
-  for (let i = 0; i < results.length; i++) {
-    const r = results[i];
-    if (r.status === 'fulfilled') items.push(...r.value);
-    else errors.push(`${VAKBLAD_FEEDS[i].bron}: ${r.reason?.message || 'fout'}`);
+  let okCount = 0;
+  for (const r of results) {
+    if (r.status === 'fulfilled') {
+      items.push(...r.value);
+      okCount += 1;
+    }
   }
-  if (items.length === 0 && errors.length > 0) throw new Error(errors.join('; '));
-  return items;
-}
-
-async function fetchAIToolsRaw() {
-  const results = await Promise.allSettled(
-    AI_FEEDS.map((f) => parseFeed(f.url, f.bron, 'ai-tools', null, 10)),
-  );
-  const items = [];
-  const errors = [];
-  for (let i = 0; i < results.length; i++) {
-    const r = results[i];
-    if (r.status === 'fulfilled') items.push(...r.value);
-    else errors.push(`${AI_FEEDS[i].bron}: ${r.reason?.message || 'fout'}`);
-  }
-  if (items.length === 0 && errors.length > 0) throw new Error(errors.join('; '));
-  return items;
+  return { items, okCount, total: feeds.length };
 }
 
 async function fetchBedrijfsnieuwsRaw(companies) {
@@ -170,25 +138,17 @@ async function fetchBedrijfsnieuwsRaw(companies) {
 }
 
 export async function fetchAllSignalen(topCompanies) {
-  const [tenderned, vakbladen, aitools, bedrijfs] = await Promise.allSettled([
-    fetchTenderNedRaw(),
-    fetchVakbladenRaw(),
-    fetchAIToolsRaw(),
+  const [vakbladen, aitools, bedrijfsItems] = await Promise.all([
+    fetchFeedGroup(VAKBLAD_FEEDS, 'vakblad'),
+    fetchFeedGroup(AI_FEEDS, 'ai-tools'),
     fetchBedrijfsnieuwsRaw(topCompanies),
   ]);
-  const items = [];
-  const errors = {};
-  const pairs = [
-    ['tenderned', tenderned],
-    ['vakblad', vakbladen],
-    ['ai-tools', aitools],
-    ['bedrijfsnieuws', bedrijfs],
-  ];
-  for (const [key, r] of pairs) {
-    if (r.status === 'fulfilled') items.push(...r.value);
-    else errors[key] = r.reason?.message || 'Onbekende fout';
-  }
-  return { items, errors };
+  const items = [...vakbladen.items, ...aitools.items, ...bedrijfsItems];
+  const stats = {
+    vakblad: { ok: vakbladen.okCount, total: vakbladen.total },
+    'ai-tools': { ok: aitools.okCount, total: aitools.total },
+  };
+  return { items, stats };
 }
 
 export function matchCompanies(signalen, companyNames) {

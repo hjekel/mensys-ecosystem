@@ -20,14 +20,12 @@ import { getConcurrenten } from '../store/concurrentenStore.js';
 import styles from './SignalenPage.module.css';
 
 const TYPE_LABELS = {
-  tenderned: 'TenderNed',
   vakblad: 'Vakblad',
   'ai-tools': 'AI-tools',
   bedrijfsnieuws: 'Bedrijfsnieuws',
 };
 
 const TYPE_COLORS = {
-  tenderned: { bg: '#e8eef7', fg: '#003087' },
   vakblad: { bg: '#e6f7f2', fg: '#00a878' },
   'ai-tools': { bg: '#fff3eb', fg: '#E8500A' },
   bedrijfsnieuws: { bg: '#f3eaf7', fg: '#7C3AED' },
@@ -36,7 +34,7 @@ const TYPE_COLORS = {
 export default function SignalenPage({ contacts, setContacts, resellers, setResellers }) {
   const [signalen, setSignalenState] = useState(() => loadSignalen());
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [sourceStats, setSourceStats] = useState(null);
   const [typeFilter, setTypeFilter] = useState('');
   const [showLinkedOnly, setShowLinkedOnly] = useState(false);
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
@@ -65,17 +63,17 @@ export default function SignalenPage({ contacts, setContacts, resellers, setRese
   async function refresh() {
     if (loading) return;
     setLoading(true);
-    setErrors({});
     try {
-      const { items, errors: fetchErrors } = await fetchAllSignalen(topCompanies);
+      const { items, stats } = await fetchAllSignalen(topCompanies);
       setSignalenState((prev) => {
         const merged = mergeSignalen(prev, items);
         return matchCompanies(merged, allCompanies);
       });
-      setErrors(fetchErrors);
+      setSourceStats(stats || null);
       setLastFetch();
-    } catch (err) {
-      setErrors({ algemeen: err.message || 'Onbekende fout' });
+    } catch {
+      // stille foutafhandeling: toon alleen wat er is
+      setSourceStats(null);
     }
     setLoading(false);
   }
@@ -116,7 +114,7 @@ export default function SignalenPage({ contacts, setContacts, resellers, setRese
   }
 
   const countsByType = useMemo(() => {
-    const counts = { tenderned: 0, vakblad: 0, 'ai-tools': 0, bedrijfsnieuws: 0 };
+    const counts = { vakblad: 0, 'ai-tools': 0, bedrijfsnieuws: 0 };
     for (const s of signalen) {
       if (!s.gelezen) counts[s.type] = (counts[s.type] || 0) + 1;
     }
@@ -126,7 +124,6 @@ export default function SignalenPage({ contacts, setContacts, resellers, setRese
   const totalUnread = Object.values(countsByType).reduce((a, b) => a + b, 0);
 
   const typeOptions = [
-    { value: 'tenderned', label: `TenderNed`, count: countsByType.tenderned || 0 },
     { value: 'vakblad', label: `Vakblad`, count: countsByType.vakblad || 0 },
     { value: 'ai-tools', label: `AI-tools`, count: countsByType['ai-tools'] || 0 },
     { value: 'bedrijfsnieuws', label: `Bedrijfsnieuws`, count: countsByType.bedrijfsnieuws || 0 },
@@ -297,14 +294,9 @@ export default function SignalenPage({ contacts, setContacts, resellers, setRese
         </span>
       </section>
 
-      {Object.keys(errors).length > 0 && (
-        <div className={styles.errorBox}>
-          <strong>Sommige bronnen gaven een fout:</strong>
-          <ul>
-            {Object.entries(errors).map(([k, v]) => (
-              <li key={k}>{TYPE_LABELS[k] || k}: {v}</li>
-            ))}
-          </ul>
+      {sourceStats && partialLoad(sourceStats) && (
+        <div className={styles.sourceNote}>
+          {summariseStats(sourceStats)}
         </div>
       )}
 
@@ -461,6 +453,25 @@ function formatDate(iso) {
   } catch {
     return '';
   }
+}
+
+function partialLoad(stats) {
+  if (!stats) return false;
+  for (const v of Object.values(stats)) {
+    if (v && typeof v.ok === 'number' && typeof v.total === 'number' && v.ok < v.total) return true;
+  }
+  return false;
+}
+
+function summariseStats(stats) {
+  const parts = [];
+  for (const [key, v] of Object.entries(stats)) {
+    if (v && typeof v.ok === 'number') {
+      const label = TYPE_LABELS[key] || key;
+      parts.push(`${label}: ${v.ok}/${v.total} bronnen geladen`);
+    }
+  }
+  return parts.join(' · ');
 }
 
 function formatRelative(ms) {
