@@ -71,6 +71,29 @@ export default function ConcurrentDetailPanel({ concurrent, onClose, onEdit, onD
           </div>
         )}
 
+        {concurrent.portfolioGap && concurrent.portfolioGap.length > 0 && (
+          <div className={styles.section}>
+            <label className={styles.label}>Ontbrekend portfolio</label>
+            <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13, lineHeight: 1.55, color: '#991b1b' }}>
+              {concurrent.portfolioGap.map((s) => <li key={s}>{s}</li>)}
+            </ul>
+            {concurrent.kansNote && (
+              <div style={{
+                marginTop: 8,
+                padding: '10px 12px',
+                background: '#fff3eb',
+                borderLeft: '3px solid #E8500A',
+                borderRadius: 6,
+                fontSize: 12,
+                lineHeight: 1.55,
+                color: '#1A1A1A',
+              }}>
+                <strong>Kans voor Mensys:</strong> {concurrent.kansNote}
+              </div>
+            )}
+          </div>
+        )}
+
         <dl className={styles.grid}>
           <Item label="Website" value={concurrent.website} href={concurrent.website ? `https://${concurrent.website.replace(/^https?:\/\//, '')}` : null} external />
           <Item label="LinkedIn" value={concurrent.linkedinUrl ? 'Open profiel' : ''} href={concurrent.linkedinUrl} external />

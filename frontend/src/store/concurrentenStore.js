@@ -18,22 +18,31 @@ const SEED = [
     coopetitie: false,
     coopetitieIdee: '',
     notities: 'Directeur: Martin Nagtegaal. Omzet circa 2M USD. Frankestraat 40A Haarlem. Letterlijk om de hoek.',
+    portfolioGap: [
+      'ChatGPT Teams / OpenAI Enterprise - niet zichtbaar op website',
+      'Claude Teams (Anthropic) - niet zichtbaar',
+      'Canva Enterprise - niet zichtbaar',
+      'Figma Organization - niet zichtbaar',
+      'Miro Enterprise - niet zichtbaar',
+    ],
+    kansNote: 'Als een Actendo-klant AI-tools vraagt, is dat een direct instapmoment voor Mensys. Actendo is sterk in Microsoft en traditionele licenties maar heeft de AI-tools-propositie niet gecommuniceerd.',
   },
   {
     id: 'c2',
-    naam: 'CloudLand (Enreach)',
+    naam: 'CloudLand (onderdeel Enreach)',
     website: 'cloudland.store',
     linkedinUrl: '',
     hq: 'Zoetermeer',
     scope: 'Benelux',
     categorie: 'Coopetitie-kans',
-    propositie: 'Software distributor voor resellers en MSPs in de Benelux. Platform met brede portfolio. Geen minimale afname. Automatisering van verlengingen.',
-    sterktes: ['Platform voor resellers', 'Benelux-dekking', 'MAXQDA partner (overlap Mensys)', 'Deel van Enreach (telecom en IT)'],
+    propositie: 'CloudLand levert resellers een software-platform (onderdeel van DSD Europe, overgenomen door Enreach in 2021). Opgericht door ex-Portland medewerkers. Ze bedienen resellers als platform-leverancier; Mensys bedient resellers als licentie-backoffice. Geen directe overlap - mogelijke samenwerking voor AI-tools die CloudLand niet levert.',
+    sterktes: ['Platform voor resellers', 'Benelux-dekking', 'MAXQDA partner (overlap Mensys)', 'Onderdeel van Enreach (telecom en IT)', 'Ex-Portland team met ervaring'],
     zwaktes: ['Niet direct aan eindklanten', 'Geen AI-tools (ChatGPT/Claude) focus', 'Reseller-only model, niet voor inkopers'],
     klantsegment: 'IT-resellers en MSPs in Benelux. Niet eindklanten direct.',
     coopetitie: true,
-    coopetitieIdee: 'CloudLand bedient resellers, Mensys bedient eindklanten. Mensys kan CloudLand-resellers versterken met exoten die CloudLand niet heeft. Win-win zonder directe overlap.',
-    notities: 'Voormalig DSD Europe dochter. Menso noemde dit als concurrent. Ex-Portland mensen volgens Menso.',
+    coopetitieIdee: 'CloudLand is reseller-platform, Mensys is licentie-backoffice. Beide bedienen resellers maar vanuit andere hoek. Potentieel: Mensys levert de exoten-licenties voor CloudLand-resellers die dit zelf niet kunnen.',
+    coopetitieNota: 'CloudLand is reseller-platform, Mensys is licentie-backoffice. Beide bedienen resellers maar vanuit andere hoek. Potentieel: Mensys levert de exoten-licenties voor CloudLand-resellers die dit zelf niet kunnen.',
+    notities: 'Voormalig DSD Europe dochter, sinds 2021 onderdeel van Enreach. Ex-Portland team. Menso noemde dit als concurrent.',
   },
   {
     id: 'c3',
@@ -176,15 +185,49 @@ export const CONCURRENT_CATEGORIEEN = [
 
 export const CONCURRENT_SCOPES = ['NL', 'Benelux', 'Europa', 'Internationaal'];
 
+const SEED_BY_ID = new Map(SEED.map((s) => [s.id, s]));
+const MIGRATED_FLAG_KEY = 'mensys_concurrenten_migration_v2';
+
+function migrateStored(list) {
+  let changed = false;
+  const out = list.map((c) => {
+    const seed = SEED_BY_ID.get(c.id);
+    if (!seed) return c;
+    const patch = {};
+    // Voeg nieuwe velden toe als ze ontbreken
+    if (c.portfolioGap === undefined && seed.portfolioGap) patch.portfolioGap = seed.portfolioGap;
+    if (c.kansNote === undefined && seed.kansNote) patch.kansNote = seed.kansNote;
+    if (c.coopetitieNota === undefined && seed.coopetitieNota) patch.coopetitieNota = seed.coopetitieNota;
+    // Refresh propositie en naam voor records die expliciet gecorrigeerd zijn
+    if (c.id === 'c2' && c.naam !== seed.naam) patch.naam = seed.naam;
+    if (c.id === 'c2' && seed.propositie && c.propositie !== seed.propositie) patch.propositie = seed.propositie;
+    if (Object.keys(patch).length > 0) {
+      changed = true;
+      return { ...c, ...patch };
+    }
+    return c;
+  });
+  return { list: out, changed };
+}
+
 export function getConcurrenten() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
       saveConcurrenten(SEED);
+      try { localStorage.setItem(MIGRATED_FLAG_KEY, '1'); } catch {}
       return [...SEED];
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [...SEED];
+    if (!Array.isArray(parsed)) return [...SEED];
+    const alreadyMigrated = (() => {
+      try { return localStorage.getItem(MIGRATED_FLAG_KEY) === '1'; } catch { return false; }
+    })();
+    if (alreadyMigrated) return parsed;
+    const { list, changed } = migrateStored(parsed);
+    if (changed) saveConcurrenten(list);
+    try { localStorage.setItem(MIGRATED_FLAG_KEY, '1'); } catch {}
+    return list;
   } catch {
     return [...SEED];
   }
