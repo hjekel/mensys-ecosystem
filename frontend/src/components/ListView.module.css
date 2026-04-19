@@ -94,6 +94,12 @@
   gap: 6px;
 }
 
+.nameCol {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .firstDegreeBadge {
   display: inline-flex;
   align-items: center;

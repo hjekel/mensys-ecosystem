@@ -1,4 +1,7 @@
 import { useMemo, useState } from 'react';
+import Modal from '../components/Modal.jsx';
+import ActiviteitEntry from '../components/ActiviteitenLog/ActiviteitEntry.jsx';
+import { getActiviteitenInPeriode } from '../store/activiteitenStore.js';
 import styles from './StatistiekenPage.module.css';
 import {
   SECTORS,
@@ -26,14 +29,40 @@ export default function StatistiekenPage({
   const goInkopers = (filter) => onNavigateInkopers && onNavigateInkopers(filter);
   const goResellers = (filter) => onNavigateResellers && onNavigateResellers(filter);
 
+  const [activiteitenModalOpen, setActiviteitenModalOpen] = useState(false);
+  const activiteitenWeken = useMemo(() => computeActiviteitenWeken(), []);
+
   return (
     <div className={styles.page}>
       <div className={styles.tiles}>
+        <Tile
+          label="Activiteiten deze week"
+          value={activiteitenWeken.deze}
+          onClick={() => setActiviteitenModalOpen(true)}
+          subtekst={`Vorige week: ${activiteitenWeken.vorige}`}
+        />
         <Tile label="Totaal contacten" value={stats.total} onClick={() => goInkopers({})} />
         <Tile label="NL contacten" value={stats.nl} />
         <Tile label="Met email" value={stats.withEmail} />
         <Tile label="Met LinkedIn" value={stats.withLinkedin} />
       </div>
+
+      <Modal
+        open={activiteitenModalOpen}
+        title={`Activiteiten deze week (${activiteitenWeken.deze})`}
+        onClose={() => setActiviteitenModalOpen(false)}
+        size="lg"
+      >
+        {activiteitenWeken.dezeWeekList.length === 0 ? (
+          <div className={styles.empty}>Geen activiteiten in de laatste 7 dagen.</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {activiteitenWeken.dezeWeekList.map((a) => (
+              <ActiviteitEntry key={a.id} activiteit={a} readonly />
+            ))}
+          </div>
+        )}
+      </Modal>
 
       <div className={styles.grid}>
         <BarCard
@@ -234,7 +263,7 @@ function JobTitlesCard({ items, onItemClick }) {
   );
 }
 
-function Tile({ label, value, suffix, onClick }) {
+function Tile({ label, value, suffix, onClick, subtekst }) {
   const content = (
     <>
       <div className={styles.tileValue}>
@@ -242,6 +271,7 @@ function Tile({ label, value, suffix, onClick }) {
         {suffix && <span className={styles.tileSuffix}>{suffix}</span>}
       </div>
       <div className={styles.tileLabel}>{label}</div>
+      {subtekst && <div className={styles.tileSub}>{subtekst}</div>}
     </>
   );
   if (onClick) {
@@ -306,6 +336,21 @@ function BarCard({ title, items, total, onItemClick }) {
       </div>
     </div>
   );
+}
+
+function computeActiviteitenWeken() {
+  const nu = Date.now();
+  const DAY = 24 * 60 * 60 * 1000;
+  const zevenGeleden = new Date(nu - 7 * DAY).toISOString();
+  const veertienGeleden = new Date(nu - 14 * DAY).toISOString();
+  const nuIso = new Date(nu).toISOString();
+  const dezeWeek = getActiviteitenInPeriode(zevenGeleden, nuIso);
+  const vorigeWeek = getActiviteitenInPeriode(veertienGeleden, zevenGeleden);
+  return {
+    deze: dezeWeek.length,
+    vorige: vorigeWeek.length,
+    dezeWeekList: dezeWeek,
+  };
 }
 
 function computeStats(contacts) {

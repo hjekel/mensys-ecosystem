@@ -9,6 +9,7 @@ export default function ResellerKanban({
   onStatusChange,
   onEdit,
   onDelete,
+  laatsteActiviteitIndex,
 }) {
   const byStatus = RESELLER_STATUSES.reduce((acc, s) => {
     acc[s] = [];
@@ -61,6 +62,7 @@ export default function ResellerKanban({
                             onEdit={onEdit}
                             onDelete={onDelete}
                             dragHandleProps={dragProvided.dragHandleProps}
+                            laatsteActiviteit={laatsteActiviteitIndex ? laatsteActiviteitIndex.get(reseller.id) : null}
                           />
                         </div>
                       )}

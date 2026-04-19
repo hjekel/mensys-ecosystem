@@ -9,6 +9,7 @@ export default function KanbanView({
   onStatusChange,
   onEdit,
   onDelete,
+  laatsteActiviteitIndex,
 }) {
   const byStatus = STATUSES.reduce((acc, s) => {
     acc[s] = [];
@@ -61,6 +62,7 @@ export default function KanbanView({
                             onEdit={onEdit}
                             onDelete={onDelete}
                             dragHandleProps={dragProvided.dragHandleProps}
+                            laatsteActiviteit={laatsteActiviteitIndex ? laatsteActiviteitIndex.get(contact.id) : null}
                           />
                         </div>
                       )}

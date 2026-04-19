@@ -64,6 +64,34 @@
   color: var(--color-text);
 }
 
+.subnav {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: -4px;
+}
+
+.subnavBtn {
+  padding: 8px 14px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  font-size: 13px;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.subnavBtn:hover {
+  color: var(--color-text);
+}
+
+.subnavActive {
+  color: var(--color-blue);
+  border-bottom-color: var(--color-blue);
+  font-weight: 600;
+}
+
 .tags {
   display: flex;
   flex-wrap: wrap;

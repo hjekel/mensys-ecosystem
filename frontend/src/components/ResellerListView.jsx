@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import MensysFitBadge from './MensysFitBadge.jsx';
+import LaatsteActiviteitBadge from './ActiviteitenLog/LaatsteActiviteitBadge.jsx';
 import styles from './ListView.module.css';
 
 const COLUMNS = [
@@ -13,7 +14,7 @@ const COLUMNS = [
   { key: 'linkedin', label: 'LinkedIn', sortable: false },
 ];
 
-export default function ResellerListView({ resellers, onOpen }) {
+export default function ResellerListView({ resellers, onOpen, laatsteActiviteitIndex }) {
   const [sortKey, setSortKey] = useState('bedrijf');
   const [sortDir, setSortDir] = useState('asc');
 
@@ -70,7 +71,14 @@ export default function ResellerListView({ resellers, onOpen }) {
           {sorted.map((r, idx) => (
             <tr key={r.id} onClick={() => onOpen(r)} className={styles.row}>
               <td className={styles.rowNum}>{idx + 1}</td>
-              <td className={styles.nameCell}>{r.bedrijf || ''}</td>
+              <td className={styles.nameCell}>
+                <div className={styles.nameCol}>
+                  <span>{r.bedrijf || ''}</span>
+                  {laatsteActiviteitIndex && (
+                    <LaatsteActiviteitBadge activiteit={laatsteActiviteitIndex.get(r.id)} />
+                  )}
+                </div>
+              </td>
               <td>{r.voornaam || ''}</td>
               <td>{r.achternaam || ''}</td>
               <td className={styles.dim}>{r.functietitel || ''}</td>

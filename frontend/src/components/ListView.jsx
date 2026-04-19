@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import SectorBadge from './SectorBadge.jsx';
+import LaatsteActiviteitBadge from './ActiviteitenLog/LaatsteActiviteitBadge.jsx';
 import styles from './ListView.module.css';
 
 const COLUMNS = [
@@ -13,7 +14,7 @@ const COLUMNS = [
   { key: 'linkedinUrl', label: 'LinkedIn', sortable: false },
 ];
 
-export default function ListView({ contacts, onOpen, badgeForContact }) {
+export default function ListView({ contacts, onOpen, badgeForContact, laatsteActiviteitIndex }) {
   const [sortKey, setSortKey] = useState('company');
   const [sortDir, setSortDir] = useState('asc');
 
@@ -75,10 +76,15 @@ export default function ListView({ contacts, onOpen, badgeForContact }) {
               <td className={styles.dim}>{c.fteCategory || ''}</td>
               <td className={styles.nameCell}>{c.company || ''}</td>
               <td>
-                <span className={styles.nameInline}>
-                  <span>{c.firstName || ''}</span>
-                  {badgeForContact ? badgeForContact(c) : null}
-                </span>
+                <div className={styles.nameCol}>
+                  <span className={styles.nameInline}>
+                    <span>{c.firstName || ''}</span>
+                    {badgeForContact ? badgeForContact(c) : null}
+                  </span>
+                  {laatsteActiviteitIndex && (
+                    <LaatsteActiviteitBadge activiteit={laatsteActiviteitIndex.get(c.id)} />
+                  )}
+                </div>
               </td>
               <td>{c.lastName || ''}</td>
               <td className={styles.dim}>{c.jobTitle || ''}</td>

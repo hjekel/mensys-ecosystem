@@ -8,6 +8,8 @@ import CSVImportModal from '../components/CSVImportModal.jsx';
 import { contactsToCsv, downloadCsv } from '../utils/csvParser.js';
 import { generateId, updateContact } from '../utils/storage.js';
 import { applyCleanup, planCleanup } from '../utils/cleanup.js';
+import { voegActiviteitToe, bouwLaatsteActiviteitIndex } from '../store/activiteitenStore.js';
+import { defaultUitvoerder } from '../utils/activiteitenUtils.js';
 import styles from './InkopersPage.module.css';
 
 export default function InkopersPage({ contacts, setContacts, onFilteredCountChange, initialFilter }) {
@@ -22,6 +24,13 @@ export default function InkopersPage({ contacts, setContacts, onFilteredCountCha
   const [formOpen, setFormOpen] = useState(false);
   const [formInitial, setFormInitial] = useState(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [activiteitenTick, setActiviteitenTick] = useState(0);
+
+  const laatsteActiviteitIndex = useMemo(
+    () => bouwLaatsteActiviteitIndex('inkoper'),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activiteitenTick, contacts.length],
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -94,7 +103,19 @@ export default function InkopersPage({ contacts, setContacts, onFilteredCountCha
 
   function handleStatusChange(contact, newStatus) {
     if (contact.status === newStatus) return;
+    const oldStatus = contact.status || 'Nieuw';
     setContacts((prev) => updateContact(prev, contact.id, { status: newStatus }));
+    const naam = `${contact.firstName || ''} ${contact.lastName || ''}`.trim() || contact.company || '';
+    voegActiviteitToe({
+      contactId: contact.id,
+      contactType: 'inkoper',
+      contactNaam: naam,
+      type: 'status_wijziging',
+      richting: 'intern',
+      uitvoerder: defaultUitvoerder(),
+      kort: `Status: ${oldStatus} naar ${newStatus}`,
+    });
+    setActiviteitenTick((t) => t + 1);
     if (detail && detail.id === contact.id) {
       setDetail({ ...contact, status: newStatus });
     }
@@ -195,6 +216,7 @@ export default function InkopersPage({ contacts, setContacts, onFilteredCountCha
           onStatusChange={handleStatusChange}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          laatsteActiviteitIndex={laatsteActiviteitIndex}
         />
       ) : (
         <ListView
@@ -202,6 +224,7 @@ export default function InkopersPage({ contacts, setContacts, onFilteredCountCha
           onOpen={setDetail}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          laatsteActiviteitIndex={laatsteActiviteitIndex}
         />
       )}
 
@@ -211,6 +234,8 @@ export default function InkopersPage({ contacts, setContacts, onFilteredCountCha
         onEdit={handleEdit}
         onDelete={handleDeleteFromDetail}
         onStatusChange={handleStatusChange}
+        contactType="inkoper"
+        onActiviteitenChange={() => setActiviteitenTick((t) => t + 1)}
       />
 
       <ContactFormModal

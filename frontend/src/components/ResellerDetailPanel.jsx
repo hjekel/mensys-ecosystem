@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import MensysFitBadge from './MensysFitBadge.jsx';
+import ActiviteitenLogTab from './ActiviteitenLog/ActiviteitenLogTab.jsx';
 import styles from './ContactDetailPanel.module.css';
 import { RESELLER_STATUSES } from '@shared/constants.js';
 
@@ -8,16 +9,19 @@ export default function ResellerDetailPanel({
   onClose,
   onDelete,
   onSave,
+  onActiviteitenChange,
 }) {
   const [notities, setNotities] = useState('');
   const [status, setStatus] = useState('Nieuw');
+  const [tab, setTab] = useState('gegevens');
 
   useEffect(() => {
     if (reseller) {
       setNotities(reseller.notities || '');
       setStatus(reseller.status || 'Nieuw');
+      setTab('gegevens');
     }
-  }, [reseller]);
+  }, [reseller?.id]);
 
   useEffect(() => {
     function onKey(e) {
@@ -64,6 +68,32 @@ export default function ResellerDetailPanel({
           </button>
         </div>
 
+        <div className={styles.subnav}>
+          <button
+            type="button"
+            className={`${styles.subnavBtn} ${tab === 'gegevens' ? styles.subnavActive : ''}`}
+            onClick={() => setTab('gegevens')}
+          >
+            Gegevens
+          </button>
+          <button
+            type="button"
+            className={`${styles.subnavBtn} ${tab === 'log' ? styles.subnavActive : ''}`}
+            onClick={() => setTab('log')}
+          >
+            Log
+          </button>
+        </div>
+
+        {tab === 'log' ? (
+          <ActiviteitenLogTab
+            contactId={reseller.id}
+            contactType="reseller"
+            contactNaam={displayTitle}
+            onChange={onActiviteitenChange}
+          />
+        ) : (
+        <>
         <div className={styles.tags}>
           <MensysFitBadge fit={reseller.mensysFit} />
           {reseller.resellerType && (
@@ -129,6 +159,8 @@ export default function ResellerDetailPanel({
             Opslaan
           </button>
         </div>
+        </>
+        )}
       </aside>
     </div>
   );

@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import SectorBadge from './SectorBadge.jsx';
+import ActiviteitenLogTab from './ActiviteitenLog/ActiviteitenLogTab.jsx';
 import styles from './ContactDetailPanel.module.css';
 import { STATUSES } from '@shared/constants.js';
 
@@ -9,7 +10,11 @@ export default function ContactDetailPanel({
   onEdit,
   onDelete,
   onStatusChange,
+  contactType = 'inkoper',
+  onActiviteitenChange,
 }) {
+  const [tab, setTab] = useState('gegevens');
+
   useEffect(() => {
     function onKey(e) {
       if (e.key === 'Escape') onClose();
@@ -17,6 +22,10 @@ export default function ContactDetailPanel({
     if (contact) document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [contact, onClose]);
+
+  useEffect(() => {
+    setTab('gegevens');
+  }, [contact?.id]);
 
   if (!contact) return null;
 
@@ -43,6 +52,32 @@ export default function ContactDetailPanel({
           </button>
         </div>
 
+        <div className={styles.subnav}>
+          <button
+            type="button"
+            className={`${styles.subnavBtn} ${tab === 'gegevens' ? styles.subnavActive : ''}`}
+            onClick={() => setTab('gegevens')}
+          >
+            Gegevens
+          </button>
+          <button
+            type="button"
+            className={`${styles.subnavBtn} ${tab === 'log' ? styles.subnavActive : ''}`}
+            onClick={() => setTab('log')}
+          >
+            Log
+          </button>
+        </div>
+
+        {tab === 'log' ? (
+          <ActiviteitenLogTab
+            contactId={contact.id}
+            contactType={contactType}
+            contactNaam={fullName}
+            onChange={onActiviteitenChange}
+          />
+        ) : (
+        <>
         <div className={styles.tags}>
           <SectorBadge sector={contact.sector} />
           {contact.fteCategory && contact.fteCategory !== 'Onbekend' && (
@@ -104,6 +139,8 @@ export default function ContactDetailPanel({
             Bewerken
           </button>
         </div>
+        </>
+        )}
       </aside>
     </div>
   );

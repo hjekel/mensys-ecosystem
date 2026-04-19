@@ -6,12 +6,8 @@
 
 .tiles {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 16px;
-}
-
-@media (max-width: 900px) {
-  .tiles { grid-template-columns: repeat(2, 1fr); }
 }
 
 .tile {
@@ -76,6 +72,12 @@
   font-size: 20px;
   font-weight: 600;
   margin-left: 2px;
+}
+
+.tileSub {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin-top: 2px;
 }
 
 .sectionDivider {

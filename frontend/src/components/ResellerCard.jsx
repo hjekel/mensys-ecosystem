@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import MensysFitBadge from './MensysFitBadge.jsx';
+import LaatsteActiviteitBadge from './ActiviteitenLog/LaatsteActiviteitBadge.jsx';
 import styles from './ResellerCard.module.css';
 import { RESELLER_STATUSES } from '@shared/constants.js';
 
@@ -10,6 +11,7 @@ export default function ResellerCard({
   onEdit,
   onDelete,
   dragHandleProps,
+  laatsteActiviteit,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
@@ -128,6 +130,10 @@ export default function ResellerCard({
           </a>
         </div>
       )}
+
+      <div className={styles.activiteitFoot}>
+        <LaatsteActiviteitBadge activiteit={laatsteActiviteit} />
+      </div>
     </div>
   );
 }

@@ -10,6 +10,8 @@ import { downloadCsv } from '../utils/csvParser.js';
 import { addCeo, updateCeo, deleteCeo } from '../store/ceoStore.js';
 import { applyCleanup, planCleanup } from '../utils/cleanup.js';
 import { detectAiTools, hasAiTool } from '../utils/aiTools.js';
+import { voegActiviteitToe, bouwLaatsteActiviteitIndex } from '../store/activiteitenStore.js';
+import { defaultUitvoerder } from '../utils/activiteitenUtils.js';
 import { CEO_FTE_CATEGORIES } from '@shared/constants.js';
 import listStyles from '../components/ListView.module.css';
 import styles from './InkopersPage.module.css';
@@ -57,6 +59,13 @@ export default function CeoPage({ ceos, setCeos, onFilteredCountChange }) {
   const [formOpen, setFormOpen] = useState(false);
   const [formInitial, setFormInitial] = useState(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [activiteitenTick, setActiviteitenTick] = useState(0);
+
+  const laatsteActiviteitIndex = useMemo(
+    () => bouwLaatsteActiviteitIndex('ceo'),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activiteitenTick, ceos.length],
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -161,7 +170,19 @@ export default function CeoPage({ ceos, setCeos, onFilteredCountChange }) {
 
   function handleStatusChange(contact, newStatus) {
     if (contact.status === newStatus) return;
+    const oldStatus = contact.status || 'Nieuw';
     setCeos((prev) => updateCeo(prev, contact.id, { status: newStatus }));
+    const naam = `${contact.firstName || ''} ${contact.lastName || ''}`.trim() || contact.company || '';
+    voegActiviteitToe({
+      contactId: contact.id,
+      contactType: 'ceo',
+      contactNaam: naam,
+      type: 'status_wijziging',
+      richting: 'intern',
+      uitvoerder: defaultUitvoerder(),
+      kort: `Status: ${oldStatus} naar ${newStatus}`,
+    });
+    setActiviteitenTick((t) => t + 1);
     if (detail && detail.id === contact.id) {
       setDetail({ ...contact, status: newStatus });
     }
@@ -261,6 +282,7 @@ export default function CeoPage({ ceos, setCeos, onFilteredCountChange }) {
           onStatusChange={handleStatusChange}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          laatsteActiviteitIndex={laatsteActiviteitIndex}
         />
       ) : (
         <ListView
@@ -269,6 +291,7 @@ export default function CeoPage({ ceos, setCeos, onFilteredCountChange }) {
           onEdit={handleEdit}
           onDelete={handleDelete}
           badgeForContact={(c) => (isFirstDegree(c) ? <FirstDegreeBadge /> : null)}
+          laatsteActiviteitIndex={laatsteActiviteitIndex}
         />
       )}
 
@@ -278,6 +301,8 @@ export default function CeoPage({ ceos, setCeos, onFilteredCountChange }) {
         onEdit={handleEdit}
         onDelete={handleDeleteFromDetail}
         onStatusChange={handleStatusChange}
+        contactType="ceo"
+        onActiviteitenChange={() => setActiviteitenTick((t) => t + 1)}
       />
 
       <ContactFormModal

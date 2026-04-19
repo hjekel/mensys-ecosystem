@@ -13,6 +13,8 @@ import {
   deleteReseller,
 } from '../store/resellersStore.js';
 import { applyResellerCleanup, planResellerCleanup } from '../utils/resellerCleanup.js';
+import { voegActiviteitToe, bouwLaatsteActiviteitIndex } from '../store/activiteitenStore.js';
+import { defaultUitvoerder } from '../utils/activiteitenUtils.js';
 import styles from './ResellersPage.module.css';
 
 export default function ResellersPage({ resellers, setResellers, onFilteredCountChange, initialFilter }) {
@@ -26,6 +28,13 @@ export default function ResellersPage({ resellers, setResellers, onFilteredCount
   const [detail, setDetail] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
   const [formInitial, setFormInitial] = useState(null);
+  const [activiteitenTick, setActiviteitenTick] = useState(0);
+
+  const laatsteActiviteitIndex = useMemo(
+    () => bouwLaatsteActiviteitIndex('reseller'),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activiteitenTick, resellers.length],
+  );
   const [importOpen, setImportOpen] = useState(false);
 
   const filtered = useMemo(() => {
@@ -97,7 +106,20 @@ export default function ResellersPage({ resellers, setResellers, onFilteredCount
 
   function handleStatusChange(reseller, newStatus) {
     if (reseller.status === newStatus) return;
+    const oldStatus = reseller.status || 'Nieuw';
     setResellers((prev) => updateReseller(prev, reseller.id, { status: newStatus }));
+    const naam = reseller.bedrijf
+      || `${reseller.voornaam || ''} ${reseller.achternaam || ''}`.trim();
+    voegActiviteitToe({
+      contactId: reseller.id,
+      contactType: 'reseller',
+      contactNaam: naam,
+      type: 'status_wijziging',
+      richting: 'intern',
+      uitvoerder: defaultUitvoerder(),
+      kort: `Status: ${oldStatus} naar ${newStatus}`,
+    });
+    setActiviteitenTick((t) => t + 1);
     if (detail && detail.id === reseller.id) {
       setDetail({ ...reseller, status: newStatus });
     }
@@ -194,12 +216,17 @@ export default function ResellersPage({ resellers, setResellers, onFilteredCount
         <ResellerKanban
           resellers={filtered}
           onCardOpen={setDetail}
+          laatsteActiviteitIndex={laatsteActiviteitIndex}
           onStatusChange={handleStatusChange}
           onEdit={handleEdit}
           onDelete={handleDelete}
         />
       ) : (
-        <ResellerListView resellers={filtered} onOpen={setDetail} />
+        <ResellerListView
+          resellers={filtered}
+          onOpen={setDetail}
+          laatsteActiviteitIndex={laatsteActiviteitIndex}
+        />
       )}
 
       <ResellerDetailPanel
@@ -207,6 +234,7 @@ export default function ResellersPage({ resellers, setResellers, onFilteredCount
         onClose={() => setDetail(null)}
         onDelete={handleDeleteFromDetail}
         onSave={handleSaveDetail}
+        onActiviteitenChange={() => setActiviteitenTick((t) => t + 1)}
       />
 
       <ResellerFormModal

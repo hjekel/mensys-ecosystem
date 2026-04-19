@@ -1,0 +1,12 @@
+.grijs {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.oranje {
+  font-size: 11px;
+  color: #E8A020;
+  font-weight: 600;
+  white-space: nowrap;
+}

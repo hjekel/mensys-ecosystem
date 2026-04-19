@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import LaatsteActiviteitBadge from './ActiviteitenLog/LaatsteActiviteitBadge.jsx';
 import styles from './ContactCard.module.css';
 import { STATUSES } from '@shared/constants.js';
 
@@ -9,6 +10,7 @@ export default function ContactCard({
   onEdit,
   onDelete,
   dragHandleProps,
+  laatsteActiviteit,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
@@ -131,6 +133,10 @@ export default function ContactCard({
           </a>
         </div>
       )}
+
+      <div className={styles.activiteitFoot}>
+        <LaatsteActiviteitBadge activiteit={laatsteActiviteit} />
+      </div>
     </div>
   );
 }
