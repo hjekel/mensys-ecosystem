@@ -1,26 +1,34 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import RolodexKaart from '../components/RolodexKaart/RolodexKaart.jsx';
+import {
+  getDistributeurs,
+  saveDistributeurs,
+  updateDistributeur,
+} from '../store/distributeursStore.js';
 import styles from './EcosysteemPage.module.css';
-
-const DISTRIBUTEURS = [
-  { naam: 'ALSO', locatie: 'Straubenhardt (DE)' },
-  { naam: 'Copaco', locatie: 'Eindhoven' },
-  { naam: 'Ingram Micro', locatie: 'Utrecht' },
-  { naam: 'TD SYNNEX', locatie: 'Utrecht' },
-  { naam: 'DSD Europe', locatie: 'Zoetermeer' },
-];
 
 const VENDOR_SAMPLE = 'OpenAI · Canva · Figma · Miro · Anthropic · Kaspersky + 694 meer';
 
 export default function EcosysteemPage({ contacts = [], resellers = [], onNavigate }) {
   const [showGeldstroom, setShowGeldstroom] = useState(true);
   const [showAantallen, setShowAantallen] = useState(true);
-  const [tooltip, setTooltip] = useState(null);
+  const [distributeurs, setDistributeurs] = useState(() => getDistributeurs());
+  const [openDistributeur, setOpenDistributeur] = useState(null);
 
   const inkopersCount = contacts.length;
   const resellersCount = resellers.length;
 
   function goTo(tab) {
     if (onNavigate) onNavigate(tab);
+  }
+
+  function onUpdateDistributeur(id, values) {
+    setDistributeurs((prev) => {
+      const next = updateDistributeur(prev, id, values);
+      saveDistributeurs(next);
+      return next;
+    });
+    setOpenDistributeur((d) => (d && d.id === id ? { ...d, ...values } : d));
   }
 
   return (
@@ -78,18 +86,19 @@ export default function EcosysteemPage({ contacts = [], resellers = [], onNaviga
             <text x="600" y="30" textAnchor="middle" className={styles.sectionLabel}>
               DISTRIBUTEURS
             </text>
-            {DISTRIBUTEURS.map((d, i) => {
-              const n = DISTRIBUTEURS.length;
+            {distributeurs.map((d, i) => {
+              const n = distributeurs.length;
               const totalWidth = n * 120 + (n - 1) * 12;
               const startX = 600 - totalWidth / 2;
               const x = startX + i * 132;
               return (
                 <g
-                  key={d.naam}
+                  key={d.id}
                   transform={`translate(${x}, 45)`}
                   className={styles.distribBlock}
-                  onMouseEnter={(e) => setTooltip({ text: `${d.naam} · ${d.locatie}`, x: e.clientX, y: e.clientY })}
-                  onMouseLeave={() => setTooltip(null)}
+                  onClick={() => setOpenDistributeur(d)}
+                  role="button"
+                  aria-label={`Open kaartje van ${d.naam}`}
                 >
                   <rect width="120" height="42" rx="8" fill="#F2F5FB" stroke="#E5E7EB" />
                   <text x="60" y="26" textAnchor="middle" className={styles.distribName}>
@@ -254,15 +263,16 @@ export default function EcosysteemPage({ contacts = [], resellers = [], onNaviga
           </filter>
         </svg>
 
-        {tooltip && (
-          <div
-            className={styles.floatTooltip}
-            style={{ left: tooltip.x + 8, top: tooltip.y + 8 }}
-          >
-            {tooltip.text}
-          </div>
-        )}
       </div>
+
+      {openDistributeur && (
+        <RolodexKaart
+          record={openDistributeur}
+          type="distributeur"
+          onClose={() => setOpenDistributeur(null)}
+          onUpdate={onUpdateDistributeur}
+        />
+      )}
     </div>
   );
 }

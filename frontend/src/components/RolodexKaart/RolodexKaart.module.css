@@ -1,0 +1,131 @@
+.kindLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 2px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 8px 14px;
+  margin: 0;
+  padding: 14px 0;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dt {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding-top: 2px;
+}
+
+.dd {
+  font-size: 13px;
+  color: var(--color-text);
+  margin: 0;
+  word-break: break-word;
+}
+
+.ddDim {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.vendorChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.vendorChip {
+  padding: 2px 8px;
+  background: rgba(0, 48, 135, 0.08);
+  color: var(--color-blue);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 13px;
+  line-height: 1.55;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.listSterk { color: #00a878; }
+.listZwak { color: #991b1b; }
+
+.propositie {
+  font-size: 13px;
+  color: var(--color-text);
+  line-height: 1.55;
+}
+
+.coopBanner {
+  background: #e6f7f2;
+  color: #00a878;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.coopBanner strong {
+  font-weight: 700;
+}
+
+.statusPill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.statusActief { background: #e6f7f2; color: #00a878; }
+.statusInactief { background: #fef2f2; color: #991b1b; }
+.statusOnderzocht { background: #e8eef7; color: var(--color-blue); }
+
+.notitiesTextarea {
+  width: 100%;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 10px;
+  margin-top: auto;
+  border-top: 1px solid var(--color-border);
+}

@@ -83,12 +83,17 @@
 }
 
 .distribBlock {
-  cursor: help;
+  cursor: pointer;
   transition: transform 0.12s;
 }
 
 .distribBlock:hover rect {
   stroke: var(--color-blue);
+  fill: #E8EEF7;
+}
+
+.distribBlock:active {
+  transform: translate(0, 1px);
 }
 
 .distribName {

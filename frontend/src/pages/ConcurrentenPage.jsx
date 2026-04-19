@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import FilterDropdown from '../components/FilterDropdown.jsx';
 import VerschilMatrix from '../components/VerschilMatrix.jsx';
 import ConcurrentFormModal from '../components/ConcurrentFormModal.jsx';
-import ConcurrentDetailPanel from '../components/ConcurrentDetailPanel.jsx';
 import KlantSignaalModal from '../components/KlantSignaalModal.jsx';
+import RolodexKaart from '../components/RolodexKaart/RolodexKaart.jsx';
 import {
   getConcurrenten,
   saveConcurrenten,
@@ -163,6 +163,39 @@ export default function ConcurrentenPage() {
         <span className={styles.resultCount}>{filtered.length} concurrenten</span>
       </section>
 
+      <section className={styles.miniSection}>
+        <h2 className={styles.miniTitle}>Snel openen</h2>
+        <p className={styles.miniSub}>
+          Klik op een concurrent om het Rolodex-kaartje rechts te openen
+          (inclusief activiteiten-log).
+        </p>
+        <div className={styles.miniGrid}>
+          {filtered.map((c) => {
+            const catColors = CAT_COLORS[c.categorie] || CAT_COLORS.Enterprise;
+            const samenvatting = firstSentence(c.propositie);
+            return (
+              <button
+                key={`mini-${c.id}`}
+                type="button"
+                className={styles.miniCard}
+                onClick={() => setDetail(c)}
+              >
+                <div className={styles.miniHead}>
+                  <span className={styles.miniNaam}>{c.naam}</span>
+                  <span
+                    className={styles.miniBadge}
+                    style={{ background: catColors.bg, color: catColors.fg }}
+                  >
+                    {c.categorie}
+                  </span>
+                </div>
+                {samenvatting && <p className={styles.miniText}>{samenvatting}</p>}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
       <div className={styles.grid}>
         {filtered.map((c) => {
           const catColors = CAT_COLORS[c.categorie] || CAT_COLORS.Enterprise;
@@ -294,12 +327,11 @@ export default function ConcurrentenPage() {
       </section>
 
       {detail && (
-        <ConcurrentDetailPanel
-          concurrent={detail}
+        <RolodexKaart
+          record={detail}
+          type="concurrent"
           onClose={() => setDetail(null)}
-          onEdit={handleEditConcurrent}
-          onDelete={handleDeleteConcurrent}
-          onNotitiesChange={handleNotitiesChange}
+          onUpdate={(id, values) => handleNotitiesChange(id, values.notities)}
         />
       )}
 
@@ -328,4 +360,15 @@ function formatDate(iso) {
   } catch {
     return '';
   }
+}
+
+function firstSentence(text) {
+  if (!text) return '';
+  const clean = String(text).trim();
+  const match = clean.match(/[^.!?]+[.!?]/);
+  if (match) {
+    const s = match[0].trim();
+    return s.length > 140 ? s.slice(0, 137) + '...' : s;
+  }
+  return clean.length > 140 ? clean.slice(0, 137) + '...' : clean;
 }
