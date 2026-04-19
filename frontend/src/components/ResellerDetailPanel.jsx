@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import MensysFitBadge from './MensysFitBadge.jsx';
 import ActiviteitenLogTab from './ActiviteitenLog/ActiviteitenLogTab.jsx';
+import PersoonlijkeContextSectie from './PersoonlijkeContextSectie.jsx';
 import styles from './ContactDetailPanel.module.css';
 import { RESELLER_STATUSES } from '@shared/constants.js';
 
@@ -10,6 +11,8 @@ export default function ResellerDetailPanel({
   onDelete,
   onSave,
   onActiviteitenChange,
+  onUpdateContext,
+  onOpenOpener,
 }) {
   const [notities, setNotities] = useState('');
   const [status, setStatus] = useState('Nieuw');
@@ -145,6 +148,32 @@ export default function ResellerDetailPanel({
             placeholder="Aantekeningen over deze reseller"
           />
         </div>
+
+        {onUpdateContext && (
+          <PersoonlijkeContextSectie
+            record={reseller}
+            onSave={onUpdateContext}
+          />
+        )}
+
+        {onOpenOpener && (
+          <div className={styles.openerRow}>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => onOpenOpener(reseller, 'koud')}
+            >
+              Koude opener
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => onOpenOpener(reseller, 'warm')}
+            >
+              Warm bericht
+            </button>
+          </div>
+        )}
 
         <div className={styles.footer}>
           <button type="button" className="btn btn-danger" onClick={() => onDelete(reseller)}>

@@ -5,11 +5,13 @@ import ListView from '../components/ListView.jsx';
 import ContactDetailPanel from '../components/ContactDetailPanel.jsx';
 import ContactFormModal from '../components/ContactFormModal.jsx';
 import CSVImportModal from '../components/CSVImportModal.jsx';
+import OpenerModal from '../components/OpenerModal.jsx';
 import { contactsToCsv, downloadCsv } from '../utils/csvParser.js';
 import { generateId, updateContact } from '../utils/storage.js';
 import { applyCleanup, planCleanup } from '../utils/cleanup.js';
 import { voegActiviteitToe, bouwLaatsteActiviteitIndex } from '../store/activiteitenStore.js';
 import { defaultUitvoerder } from '../utils/activiteitenUtils.js';
+import { leesVoorkeur, schrijfVoorkeur } from '../utils/viewVoorkeur.js';
 import styles from './InkopersPage.module.css';
 
 export default function InkopersPage({ contacts, setContacts, onFilteredCountChange, initialFilter }) {
@@ -18,13 +20,21 @@ export default function InkopersPage({ contacts, setContacts, onFilteredCountCha
   const [fte, setFte] = useState('');
   const [status, setStatus] = useState('');
   const [jobTitle, setJobTitle] = useState('');
-  const [view, setView] = useState('kanban');
+  const [view, setView] = useState(() => leesVoorkeur('inkopers'));
+
+  function handleViewChange(next) {
+    setView(next);
+    schrijfVoorkeur('inkopers', next);
+  }
 
   const [detail, setDetail] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
   const [formInitial, setFormInitial] = useState(null);
   const [importOpen, setImportOpen] = useState(false);
   const [activiteitenTick, setActiviteitenTick] = useState(0);
+  const [openerContext, setOpenerContext] = useState(null);
+  const [openerInitialModus, setOpenerInitialModus] = useState('koud');
+  const [openerTargetId, setOpenerTargetId] = useState(null);
 
   const laatsteActiviteitIndex = useMemo(
     () => bouwLaatsteActiviteitIndex('inkoper'),
@@ -167,6 +177,40 @@ export default function InkopersPage({ contacts, setContacts, onFilteredCountCha
     downloadCsv(`mensys-inkopers-${stamp}.csv`, csv);
   }
 
+  function handleUpdateContext(id, patch) {
+    setContacts((prev) => updateContact(prev, id, patch));
+    if (detail && detail.id === id) {
+      setDetail({ ...detail, ...patch });
+    }
+  }
+
+  function openOpener(contact, modus) {
+    const naam = `${contact.firstName || ''} ${contact.lastName || ''}`.trim();
+    setOpenerContext({
+      naam,
+      functie: contact.jobTitle || '',
+      bedrijf: contact.company || '',
+      sector: contact.sector || '',
+      signaal: '',
+      doelgroep: 'inkoper',
+      linkedinAbout: contact.linkedinAbout || '',
+      linkedinPosts: contact.linkedinPosts || '',
+      vorigeJobs: [contact.vorigeJob1 || '', contact.vorigeJob2 || '', contact.vorigeJob3 || ''],
+    });
+    setOpenerInitialModus(modus === 'warm' ? 'warm' : 'koud');
+    setOpenerTargetId(contact.id);
+  }
+
+  function handleSaveOpenerAsNotitie(text) {
+    if (!openerTargetId) return;
+    const stamp = new Date().toLocaleDateString('nl-NL');
+    const prefix = `Opener (${stamp}):\n`;
+    const c = contacts.find((x) => x.id === openerTargetId);
+    if (!c) return;
+    const combined = c.notes ? `${c.notes}\n\n${prefix}${text}` : `${prefix}${text}`;
+    setContacts((prev) => updateContact(prev, openerTargetId, { notes: combined }));
+  }
+
   function handleCleanup() {
     const { toRemove, toRename } = planCleanup(contacts);
     if (toRemove.length === 0 && toRename.length === 0) {
@@ -198,7 +242,7 @@ export default function InkopersPage({ contacts, setContacts, onFilteredCountCha
         onJobTitleChange={setJobTitle}
         jobTitleOptions={jobTitleOptions}
         view={view}
-        onViewChange={setView}
+        onViewChange={handleViewChange}
         onAddClick={handleAdd}
         onImportClick={() => setImportOpen(true)}
         onExportClick={handleExport}
@@ -236,6 +280,19 @@ export default function InkopersPage({ contacts, setContacts, onFilteredCountCha
         onStatusChange={handleStatusChange}
         contactType="inkoper"
         onActiviteitenChange={() => setActiviteitenTick((t) => t + 1)}
+        onUpdateContext={handleUpdateContext}
+        onOpenOpener={openOpener}
+      />
+
+      <OpenerModal
+        open={Boolean(openerContext)}
+        context={openerContext}
+        initialModus={openerInitialModus}
+        onClose={() => {
+          setOpenerContext(null);
+          setOpenerTargetId(null);
+        }}
+        onSaveAsNotitie={handleSaveOpenerAsNotitie}
       />
 
       <ContactFormModal

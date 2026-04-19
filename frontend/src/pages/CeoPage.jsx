@@ -3,6 +3,7 @@ import Filters from '../components/Filters.jsx';
 import KanbanView from '../components/KanbanView.jsx';
 import ListView from '../components/ListView.jsx';
 import ContactDetailPanel from '../components/ContactDetailPanel.jsx';
+import OpenerModal from '../components/OpenerModal.jsx';
 import ContactFormModal from '../components/ContactFormModal.jsx';
 import CSVImportModal from '../components/CSVImportModal.jsx';
 import { ceosToCsv } from '../utils/ceoCsv.js';
@@ -12,6 +13,7 @@ import { applyCleanup, planCleanup } from '../utils/cleanup.js';
 import { detectAiTools, hasAiTool } from '../utils/aiTools.js';
 import { voegActiviteitToe, bouwLaatsteActiviteitIndex } from '../store/activiteitenStore.js';
 import { defaultUitvoerder } from '../utils/activiteitenUtils.js';
+import { leesVoorkeur, schrijfVoorkeur } from '../utils/viewVoorkeur.js';
 import { CEO_FTE_CATEGORIES } from '@shared/constants.js';
 import listStyles from '../components/ListView.module.css';
 import styles from './InkopersPage.module.css';
@@ -53,13 +55,21 @@ export default function CeoPage({ ceos, setCeos, onFilteredCountChange }) {
   const [jobTitle, setJobTitle] = useState('');
   const [aiTool, setAiTool] = useState('');
   const [bron, setBron] = useState('');
-  const [view, setView] = useState('kanban');
+  const [view, setView] = useState(() => leesVoorkeur('ceo'));
+
+  function handleViewChange(next) {
+    setView(next);
+    schrijfVoorkeur('ceo', next);
+  }
 
   const [detail, setDetail] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
   const [formInitial, setFormInitial] = useState(null);
   const [importOpen, setImportOpen] = useState(false);
   const [activiteitenTick, setActiviteitenTick] = useState(0);
+  const [openerContext, setOpenerContext] = useState(null);
+  const [openerInitialModus, setOpenerInitialModus] = useState('koud');
+  const [openerTargetId, setOpenerTargetId] = useState(null);
 
   const laatsteActiviteitIndex = useMemo(
     () => bouwLaatsteActiviteitIndex('ceo'),
@@ -219,6 +229,40 @@ export default function CeoPage({ ceos, setCeos, onFilteredCountChange }) {
     setFormInitial(null);
   }
 
+  function handleUpdateContext(id, patch) {
+    setCeos((prev) => updateCeo(prev, id, patch));
+    if (detail && detail.id === id) {
+      setDetail({ ...detail, ...patch });
+    }
+  }
+
+  function openOpener(contact, modus) {
+    const naam = `${contact.firstName || ''} ${contact.lastName || ''}`.trim();
+    setOpenerContext({
+      naam,
+      functie: contact.jobTitle || '',
+      bedrijf: contact.company || '',
+      sector: contact.sector || '',
+      signaal: '',
+      doelgroep: 'directeur/eigenaar',
+      linkedinAbout: contact.linkedinAbout || '',
+      linkedinPosts: contact.linkedinPosts || '',
+      vorigeJobs: [contact.vorigeJob1 || '', contact.vorigeJob2 || '', contact.vorigeJob3 || ''],
+    });
+    setOpenerInitialModus(modus === 'warm' ? 'warm' : 'koud');
+    setOpenerTargetId(contact.id);
+  }
+
+  function handleSaveOpenerAsNotitie(text) {
+    if (!openerTargetId) return;
+    const stamp = new Date().toLocaleDateString('nl-NL');
+    const prefix = `Opener (${stamp}):\n`;
+    const c = ceos.find((x) => x.id === openerTargetId);
+    if (!c) return;
+    const combined = c.notes ? `${c.notes}\n\n${prefix}${text}` : `${prefix}${text}`;
+    setCeos((prev) => updateCeo(prev, openerTargetId, { notes: combined }));
+  }
+
   function handleExport() {
     const csv = ceosToCsv(filtered);
     const stamp = new Date().toISOString().slice(0, 10);
@@ -261,7 +305,7 @@ export default function CeoPage({ ceos, setCeos, onFilteredCountChange }) {
         onBronChange={setBron}
         bronOptions={bronOptions}
         view={view}
-        onViewChange={setView}
+        onViewChange={handleViewChange}
         onAddClick={handleAdd}
         onImportClick={() => setImportOpen(true)}
         onExportClick={handleExport}
@@ -303,6 +347,19 @@ export default function CeoPage({ ceos, setCeos, onFilteredCountChange }) {
         onStatusChange={handleStatusChange}
         contactType="ceo"
         onActiviteitenChange={() => setActiviteitenTick((t) => t + 1)}
+        onUpdateContext={handleUpdateContext}
+        onOpenOpener={openOpener}
+      />
+
+      <OpenerModal
+        open={Boolean(openerContext)}
+        context={openerContext}
+        initialModus={openerInitialModus}
+        onClose={() => {
+          setOpenerContext(null);
+          setOpenerTargetId(null);
+        }}
+        onSaveAsNotitie={handleSaveOpenerAsNotitie}
       />
 
       <ContactFormModal

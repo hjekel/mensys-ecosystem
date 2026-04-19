@@ -1,9 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Modal from './Modal.jsx';
 import { generateOpenerDual, getApiKey, setApiKey } from '../utils/anthropic.js';
 import styles from './OpenerModal.module.css';
 
-export default function OpenerModal({ open, onClose, context, onSaveAsNotitie }) {
+function isWarmContextCompleet(context) {
+  if (!context) return false;
+  const hasAbout = Boolean(String(context.linkedinAbout || '').trim());
+  const hasPosts = Boolean(String(context.linkedinPosts || '').trim());
+  const jobs = Array.isArray(context.vorigeJobs) ? context.vorigeJobs.filter((j) => j && String(j).trim()) : [];
+  const hasJobs = jobs.length > 0;
+  return hasAbout && hasPosts && hasJobs;
+}
+
+export default function OpenerModal({ open, onClose, context, initialModus, onSaveAsNotitie }) {
+  const [modus, setModus] = useState(() => (initialModus === 'warm' ? 'warm' : 'koud'));
   const [texts, setTexts] = useState({ nl: '', en: '' });
   const [errors, setErrors] = useState({ nl: null, en: null });
   const [loading, setLoading] = useState(false);
@@ -12,6 +22,10 @@ export default function OpenerModal({ open, onClose, context, onSaveAsNotitie })
   const [hasKey, setHasKey] = useState(() => Boolean(getApiKey()));
   const [copied, setCopied] = useState({ nl: false, en: false });
   const [saved, setSaved] = useState(false);
+  const [warmContextGedismist, setWarmContextGedismist] = useState(false);
+
+  const warmContextCompleet = useMemo(() => isWarmContextCompleet(context), [context]);
+  const moetContextWaarschuwing = modus === 'warm' && !warmContextCompleet && !warmContextGedismist;
 
   useEffect(() => {
     if (!open) {
@@ -20,20 +34,28 @@ export default function OpenerModal({ open, onClose, context, onSaveAsNotitie })
       setCopied({ nl: false, en: false });
       setSaved(false);
       setActiveLang('nl');
+      setWarmContextGedismist(false);
       return;
     }
+    setModus(initialModus === 'warm' ? 'warm' : 'koud');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialModus]);
+
+  useEffect(() => {
+    if (!open) return;
     if (!hasKey) return;
     if (!context) return;
+    if (modus === 'warm' && !warmContextCompleet && !warmContextGedismist) return;
     generate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, context, hasKey]);
+  }, [open, context, hasKey, modus, warmContextGedismist]);
 
   async function generate() {
     setLoading(true);
     setErrors({ nl: null, en: null });
     setTexts({ nl: '', en: '' });
     try {
-      const result = await generateOpenerDual(context);
+      const result = await generateOpenerDual({ ...context, modus });
       setTexts({ nl: result.nl || '', en: result.en || '' });
       setErrors({ nl: result.nlError, en: result.enError });
     } catch (err) {
@@ -74,7 +96,8 @@ export default function OpenerModal({ open, onClose, context, onSaveAsNotitie })
     const text = texts[activeLang]?.trim();
     if (!text || !onSaveAsNotitie) return;
     const prefix = activeLang === 'nl' ? 'NL: ' : 'EN: ';
-    onSaveAsNotitie(prefix + text);
+    const modusTag = modus === 'warm' ? '[Warm] ' : '[Koud] ';
+    onSaveAsNotitie(modusTag + prefix + text);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }
@@ -83,16 +106,41 @@ export default function OpenerModal({ open, onClose, context, onSaveAsNotitie })
     setTexts((t) => ({ ...t, [activeLang]: value }));
   }
 
+  function kiesModus(next) {
+    if (next === modus) return;
+    setModus(next);
+    setWarmContextGedismist(false);
+    setTexts({ nl: '', en: '' });
+    setErrors({ nl: null, en: null });
+  }
+
   const activeText = texts[activeLang];
   const activeError = errors[activeLang];
+  const titel = modus === 'warm' ? 'Warm bericht' : 'Koude opener';
 
   return (
-    <Modal
-      open={open}
-      title="Opener schrijven"
-      onClose={onClose}
-      size="lg"
-    >
+    <Modal open={open} title={titel} onClose={onClose} size="lg">
+      <div className={styles.modusTabs}>
+        <button
+          type="button"
+          className={`${styles.modusTab} ${modus === 'koud' ? styles.modusTabActive : ''}`}
+          onClick={() => kiesModus('koud')}
+          aria-pressed={modus === 'koud'}
+        >
+          Koude opener
+          <span className={styles.modusSub}>3 zinnen, generiek</span>
+        </button>
+        <button
+          type="button"
+          className={`${styles.modusTab} ${modus === 'warm' ? styles.modusTabActive : ''}`}
+          onClick={() => kiesModus('warm')}
+          aria-pressed={modus === 'warm'}
+        >
+          Warm bericht
+          <span className={styles.modusSub}>4-5 zinnen, persoonlijk</span>
+        </button>
+      </div>
+
       <div className={styles.contextBlock}>
         <div><span className={styles.ctxLabel}>Voor:</span> <strong>{context?.naam || '-'}</strong></div>
         <div><span className={styles.ctxLabel}>Functie:</span> {context?.functie || '-'}</div>
@@ -102,6 +150,33 @@ export default function OpenerModal({ open, onClose, context, onSaveAsNotitie })
           <div className={styles.ctxSignal}><span className={styles.ctxLabel}>Signaal:</span> {context.signaal}</div>
         )}
       </div>
+
+      {moetContextWaarschuwing && (
+        <div className={styles.warnBlock}>
+          <div className={styles.warnTitle}>Persoonlijke context is leeg of onvolledig</div>
+          <p className={styles.warnText}>
+            Voor een warm bericht is LinkedIn About, recente Posts en laatste
+            jobtitles nodig. Vul die velden aan in het Rolodex-kaartje onder
+            "Persoonlijke context". Of kies een van de opties hieronder.
+          </p>
+          <div className={styles.warnActions}>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => kiesModus('koud')}
+            >
+              Schakel over naar Koud
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => setWarmContextGedismist(true)}
+            >
+              Toch genereren in Warm
+            </button>
+          </div>
+        </div>
+      )}
 
       {!hasKey ? (
         <div className={styles.keySection}>
@@ -134,7 +209,7 @@ export default function OpenerModal({ open, onClose, context, onSaveAsNotitie })
             API-key verkrijg je op <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noreferrer noopener">console.anthropic.com</a>.
           </p>
         </div>
-      ) : (
+      ) : moetContextWaarschuwing ? null : (
         <>
           <div className={styles.langTabs}>
             <button
@@ -178,7 +253,7 @@ export default function OpenerModal({ open, onClose, context, onSaveAsNotitie })
                   className={`input ${styles.editor}`}
                   value={activeText}
                   onChange={(e) => updateActive(e.target.value)}
-                  rows={7}
+                  rows={modus === 'warm' ? 9 : 7}
                   placeholder="Opener verschijnt hier..."
                 />
                 {activeError && (
@@ -218,6 +293,9 @@ export default function OpenerModal({ open, onClose, context, onSaveAsNotitie })
             <div><strong>Kopieer naar klembord:</strong> plak in LinkedIn DM.</div>
             <div><strong>Sla op als notitie:</strong> bewaar in contactdossier.</div>
             <div><strong>Opnieuw genereren:</strong> vraag nieuwe versies aan (NL en EN tegelijk).</div>
+            {modus === 'warm' && (
+              <div><strong>Warm bericht:</strong> stuur handmatig vanuit Rolodex zodra iemand je connectie accepteert. Gaat niet via Dispatch.</div>
+            )}
           </div>
 
           <div className={styles.keyFooter}>

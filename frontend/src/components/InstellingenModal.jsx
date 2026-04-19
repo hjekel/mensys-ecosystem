@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Modal from './Modal.jsx';
-import { DEFAULT_INSTELLINGEN } from '../utils/instellingen.js';
+import { AFSLUITER_OPTIES, DEFAULT_INSTELLINGEN } from '../utils/instellingen.js';
 import styles from './InstellingenModal.module.css';
 
 export default function InstellingenModal({ open, instellingen, onClose, onSave }) {
@@ -14,6 +14,13 @@ export default function InstellingenModal({ open, instellingen, onClose, onSave 
     setForm((f) => ({ ...f, [field]: value }));
   }
 
+  function updateAfsluiter(patch) {
+    setForm((f) => {
+      const huidig = f.openerAfsluiter || DEFAULT_INSTELLINGEN.openerAfsluiter;
+      return { ...f, openerAfsluiter: { ...huidig, ...patch } };
+    });
+  }
+
   function handleSubmit(e) {
     e.preventDefault();
     onSave(form);
@@ -22,6 +29,9 @@ export default function InstellingenModal({ open, instellingen, onClose, onSave 
   function resetDefaults() {
     setForm({ ...DEFAULT_INSTELLINGEN });
   }
+
+  const afsluiter = form.openerAfsluiter || DEFAULT_INSTELLINGEN.openerAfsluiter;
+  const toonEigenTekstveld = afsluiter.keuze === 'eigen';
 
   return (
     <Modal open={open} title="Instellingen" onClose={onClose} size="md">
@@ -80,6 +90,39 @@ export default function InstellingenModal({ open, instellingen, onClose, onSave 
             Default: #003087. Wijziging beinvloedt alleen de propositie-banner.
           </span>
         </label>
+
+        <div className={styles.sectionDivider}>
+          <span className={styles.sectionTitle}>Opener-instellingen</span>
+        </div>
+
+        <label className={styles.field}>
+          <span className={styles.label}>Afsluitende zin</span>
+          <select
+            className="input"
+            value={afsluiter.keuze}
+            onChange={(e) => updateAfsluiter({ keuze: e.target.value })}
+          >
+            {AFSLUITER_OPTIES.map((opt) => (
+              <option key={opt.key} value={opt.key}>{opt.label}</option>
+            ))}
+          </select>
+          <span className={styles.hint}>
+            De laatste zin van elke gegenereerde opener, in beide talen.
+          </span>
+        </label>
+
+        {toonEigenTekstveld && (
+          <label className={styles.field}>
+            <span className={styles.label}>Eigen afsluiter</span>
+            <input
+              type="text"
+              className="input"
+              placeholder="Bijv: Klopt dit beeld?"
+              value={afsluiter.eigen}
+              onChange={(e) => updateAfsluiter({ eigen: e.target.value })}
+            />
+          </label>
+        )}
 
         <div className={styles.footer}>
           <button type="button" className="btn btn-ghost" onClick={resetDefaults}>

@@ -6,6 +6,8 @@ import ResellerDetailPanel from '../components/ResellerDetailPanel.jsx';
 import OpenerModal from '../components/OpenerModal.jsx';
 import WeekGoals from '../components/WeekGoals.jsx';
 import YalcGewichtenModal from '../components/YalcGewichtenModal.jsx';
+import DispatchHelpButton from '../components/DispatchHelpButton.jsx';
+import LinkedInRitmeTip from '../components/LinkedInRitmeTip.jsx';
 import {
   rankInkopers,
   rankResellers,
@@ -171,8 +173,9 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
       fields,
       data: rows.map((r) => fields.map((f) => r[f])),
     });
+    const csvMetBom = '\uFEFF' + csv;
     const stamp = new Date().toISOString().slice(0, 10);
-    downloadCsv(`dripify_dispatch_${stamp}.csv`, csv);
+    downloadCsv(`dripify_dispatch_${stamp}.csv`, csvMetBom);
   }
 
   // Inkopers detail panel handlers
@@ -180,6 +183,17 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
     if (contact.status === newStatus) return;
     setContacts((prev) => updateContact(prev, contact.id, { status: newStatus }));
     setDetail((d) => (d && d.id === contact.id ? { ...d, status: newStatus } : d));
+  }
+
+  function handleInkoperContextUpdate(id, patch) {
+    setContacts((prev) => updateContact(prev, id, patch));
+    setDetail((d) => (d && d.id === id ? { ...d, ...patch } : d));
+  }
+
+  function handleCeoContextUpdate(id, patch) {
+    if (!setCeos) return;
+    setCeos((prev) => updateCeo(prev, id, patch));
+    setDetail((d) => (d && d.id === id ? { ...d, ...patch } : d));
   }
 
   function handleInkoperDelete(contact) {
@@ -237,10 +251,21 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
       : `${rec.firstName || ''} ${rec.lastName || ''}`.trim();
     const functie = isReseller ? (rec.functietitel || '') : (rec.jobTitle || '');
     const bedrijf = isReseller ? (rec.bedrijf || '') : (rec.company || '');
+    const sector = isReseller ? (rec.resellerType || '') : (rec.sector || '');
     const signaal = findSignalForCompany(bedrijf);
     const doelgroep =
       source === 'resellers' ? 'reseller' : source === 'ceo' ? 'directeur/eigenaar' : 'inkoper';
-    setOpenerContext({ naam, functie, bedrijf, signaal, doelgroep });
+    setOpenerContext({
+      naam,
+      functie,
+      bedrijf,
+      sector,
+      signaal,
+      doelgroep,
+      linkedinAbout: rec.linkedinAbout || '',
+      linkedinPosts: rec.linkedinPosts || '',
+      vorigeJobs: [rec.vorigeJob1 || '', rec.vorigeJob2 || '', rec.vorigeJob3 || ''],
+    });
     setOpenerTargetId(rec.id);
   }
 
@@ -273,6 +298,7 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
   return (
     <div className={styles.page}>
       <WeekGoals contacts={contacts} resellers={resellers} />
+      <LinkedInRitmeTip />
 
       {hotSignalen.length > 0 && (
         <section className={styles.hotSignalenBox}>
@@ -426,6 +452,7 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
         >
           Dispatch naar Dripify ({Math.min(visible.length, 50)})
         </button>
+        <DispatchHelpButton />
       </section>
 
       <section className={styles.legendWrap}>
@@ -559,6 +586,8 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
           onEdit={() => setDetail(null)}
           onDelete={handleInkoperDelete}
           onStatusChange={handleInkoperStatusChange}
+          contactType="inkoper"
+          onUpdateContext={handleInkoperContextUpdate}
         />
       )}
       {source === 'resellers' && detail && (
@@ -567,6 +596,7 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
           onClose={() => setDetail(null)}
           onDelete={handleResellerDelete}
           onSave={handleResellerSave}
+          onUpdateContext={handleResellerSave}
         />
       )}
       {source === 'ceo' && detail && (
@@ -576,6 +606,8 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
           onEdit={() => setDetail(null)}
           onDelete={handleCeoDelete}
           onStatusChange={handleCeoStatusChange}
+          contactType="ceo"
+          onUpdateContext={handleCeoContextUpdate}
         />
       )}
 

@@ -1,40 +1,14 @@
 // Anthropic API client voor de opener-generator.
-// Levert twee versies parallel: Nederlands en Engels.
+// Twee modi: Koude opener (Modus 1, 3 zinnen) en Warm bericht
+// (Modus 2, 4-5 zinnen met persoonlijke LinkedIn-context).
+// Per modus leveren we NL en EN parallel.
+
+import { getAfsluiterTekst, loadInstellingen } from './instellingen.js';
 
 const API_KEY_STORAGE = 'mensys_anthropic_api_key';
 const API_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = 'claude-sonnet-4-20250514';
-const MAX_TOKENS = 500;
-
-const SYSTEM_PROMPT_NL = `Je schrijft een LinkedIn DM voor Mensys BV, een software-licentieleverancier in Haarlem.
-Mensys levert niche-software (ChatGPT Teams, Claude Teams, Figma, Miro, Canva, SketchUp etc.) op factuur in euro. Geen creditcard. Geen USD. Een aanspreekpunt.
-
-Schrijf in het Nederlands. Spreektaal, direct, kort, intelligent.
-Drie zinnen. Niet meer.
-Begin met 'Beste [voornaam],'
-Geen aannames over de situatie van de lezer ('bij organisaties als de jouwe' of vergelijkbaar is verboden).
-Geen em-dashes.
-Geen 'vereenvoudigen', 'optimaliseren', 'ontzorgen', 'binnenkort', of andere platgetreden termen.
-Geen lijst van vijf problemen. Kies er een. De scherpste.
-De eerste zin beschrijft een herkenbare situatie vanuit de lezer (niet vanuit Mensys).
-De tweede zin legt het verband met wat Mensys doet.
-De derde zin eindigt met een concrete, lage-drempel vraag. Geen 'even bellen?'. Formuleer als: 'Past een gesprek van 10 minuten?' of vergelijkbaar.
-Schrijf alsof Harry Dry, Rory Sutherland en Alex Hormozi samen een DM schrijven: slim, direct, geen bullshit, je voelt je gezien.`;
-
-const SYSTEM_PROMPT_EN = `You write a LinkedIn DM for Mensys BV, a software licence reseller based in Haarlem, the Netherlands.
-Mensys supplies niche software (ChatGPT Teams, Claude Teams, Figma, Miro, Canva, SketchUp etc.) billed in euro. No credit card. No USD. One point of contact.
-
-Write in English. Spoken tone, direct, short, intelligent.
-Three sentences. No more.
-Start with 'Dear [firstname],'
-No assumptions about the reader's situation ('at organisations like yours' or similar is forbidden).
-No em-dashes.
-No 'simplify', 'optimise', 'streamline', 'soon', or other worn-out buzzwords.
-No list of five problems. Pick one. The sharpest.
-The first sentence describes a recognisable situation from the reader's perspective (not from Mensys's perspective).
-The second sentence connects it to what Mensys does.
-The third sentence ends with a concrete, low-threshold question. No 'quick call?'. Phrase as: 'Would a 10-minute conversation fit?' or similar.
-Write as if Harry Dry, Rory Sutherland and Alex Hormozi wrote a DM together: sharp, direct, no bullshit, the reader feels seen.`;
+const MAX_TOKENS = 600;
 
 export function getApiKey() {
   try {
@@ -57,14 +31,72 @@ export function hasApiKey() {
   return Boolean(getApiKey());
 }
 
-function buildUserMessage({ naam, functie, bedrijf, signaal, doelgroep }) {
+function buildSystemPrompt({ taal, modus, afsluiterTekst }) {
+  const taalRegel = taal === 'en'
+    ? "Schrijf in het Engels. Begin met 'Dear [firstname],'."
+    : "Schrijf in het Nederlands. Begin met 'Beste [voornaam],'.";
+
+  const lengteRegel = modus === 'warm'
+    ? 'Vier of vijf zinnen totaal. Eerste zin verwijst naar iets specifieks uit de LinkedIn-context van de lezer.'
+    : 'Drie zinnen totaal.';
+
+  const structuurBlok = modus === 'warm'
+    ? (
+      'STRUCTUUR:\n' +
+      'Zin 1: persoonlijke verwijzing naar recent werk, een post of een carrierestap van de lezer.\n' +
+      'Zin 2: herkenbaar scenario dat direct raakt aan hun situatie.\n' +
+      'Middenzin: brug naar wat Mensys doet, in een zin.\n' +
+      `Slotzin: eindig met exact deze afsluiter: "${afsluiterTekst}"`
+    )
+    : (
+      'STRUCTUUR:\n' +
+      'Zin 1: herkenbaar scenario dat direct raakt aan hun situatie.\n' +
+      'Zin 2: brug naar wat Mensys doet.\n' +
+      `Zin 3: eindig met exact deze afsluiter: "${afsluiterTekst}"`
+    );
+
   return (
-    `Naam: ${naam || '-'}\n` +
-    `Functie: ${functie || '-'}\n` +
-    `Bedrijf: ${bedrijf || '-'}\n` +
-    `Signaal: ${signaal || 'geen signaal beschikbaar'}\n` +
-    `Doelgroep: ${doelgroep || 'inkoper'}`
+    'Je schrijft een LinkedIn-bericht voor Mensys, een Nederlandse software-licentieleverancier.\n' +
+    'Mensys levert niche-software zoals ChatGPT Teams, Figma, Canva, Claude Teams en 700+ andere titels op factuur in euro, zonder creditcard-gedoe.\n\n' +
+    'REGELS:\n' +
+    `- ${taalRegel}\n` +
+    '- Geen em-dashes.\n' +
+    '- Verboden woorden: "jij als [rol] weet als geen ander", "simpelweg", "eenvoudigweg", "in de juiste volgorde", "ontzorgen".\n' +
+    '- Geen lijst van vijf problemen. Een herkenbaar scenario, zo specifiek dat de lezer denkt: hoe weet jij dat?\n' +
+    '- Geen salesy direct-mail taal.\n' +
+    '- Geen "Past een gesprek van 10 minuten?". Gebruik de opgegeven afsluiter.\n' +
+    `- ${lengteRegel}\n\n` +
+    structuurBlok
   );
+}
+
+function truncate(value, max) {
+  const v = String(value || '').trim();
+  if (v.length <= max) return v;
+  return v.slice(0, max) + '...';
+}
+
+function buildUserMessage({ naam, functie, bedrijf, sector, signaal, modus, linkedinAbout, linkedinPosts, vorigeJobs }) {
+  const lines = [
+    'CONTEXT OVER DE ONTVANGER:',
+    `Naam: ${naam || '-'}`,
+    `Functie: ${functie || '-'}`,
+    `Bedrijf: ${bedrijf || '-'}`,
+    `Sector: ${sector || '-'}`,
+  ];
+
+  if (modus === 'warm') {
+    lines.push(`LinkedIn About: ${truncate(linkedinAbout, 1200) || '-'}`);
+    lines.push(`Recente Posts: ${truncate(linkedinPosts, 1500) || '-'}`);
+    const jobs = Array.isArray(vorigeJobs)
+      ? vorigeJobs.filter((j) => j && String(j).trim()).join(' | ')
+      : '';
+    lines.push(`Laatste jobtitles: ${jobs || '-'}`);
+  }
+
+  lines.push(`Signaal of aanleiding: ${signaal || 'geen signaal beschikbaar'}`);
+
+  return lines.join('\n');
 }
 
 async function callAnthropic({ apiKey, systemPrompt, userMessage }) {
@@ -102,16 +134,23 @@ async function callAnthropic({ apiKey, systemPrompt, userMessage }) {
   return text || '(lege respons)';
 }
 
-export async function generateOpenerDual({ naam, functie, bedrijf, signaal, doelgroep }) {
+export async function generateOpenerDual(context) {
   const apiKey = getApiKey();
   if (!apiKey) {
     throw new Error('Geen Anthropic API-key ingesteld.');
   }
-  const userMessage = buildUserMessage({ naam, functie, bedrijf, signaal, doelgroep });
+
+  const modus = context?.modus === 'warm' ? 'warm' : 'koud';
+  const instellingen = loadInstellingen();
+  const afsluiterTekst = getAfsluiterTekst(instellingen.openerAfsluiter);
+
+  const systemNl = buildSystemPrompt({ taal: 'nl', modus, afsluiterTekst });
+  const systemEn = buildSystemPrompt({ taal: 'en', modus, afsluiterTekst });
+  const userMessage = buildUserMessage({ ...context, modus });
 
   const [nlResult, enResult] = await Promise.allSettled([
-    callAnthropic({ apiKey, systemPrompt: SYSTEM_PROMPT_NL, userMessage }),
-    callAnthropic({ apiKey, systemPrompt: SYSTEM_PROMPT_EN, userMessage }),
+    callAnthropic({ apiKey, systemPrompt: systemNl, userMessage }),
+    callAnthropic({ apiKey, systemPrompt: systemEn, userMessage }),
   ]);
 
   return {

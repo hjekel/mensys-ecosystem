@@ -4,6 +4,7 @@ import VerschilMatrix from '../components/VerschilMatrix.jsx';
 import ConcurrentFormModal from '../components/ConcurrentFormModal.jsx';
 import KlantSignaalModal from '../components/KlantSignaalModal.jsx';
 import RolodexKaart from '../components/RolodexKaart/RolodexKaart.jsx';
+import CategorieInfoPopover from '../components/CategorieInfoPopover.jsx';
 import {
   getConcurrenten,
   saveConcurrenten,
@@ -148,12 +149,15 @@ export default function ConcurrentenPage() {
       </section>
 
       <section className={styles.filters}>
-        <FilterDropdown
-          allLabel="Alle categorieen"
-          value={categorieFilter}
-          onChange={setCategorieFilter}
-          options={categorieOptions}
-        />
+        <div className={styles.filterWithInfo}>
+          <FilterDropdown
+            allLabel="Alle categorieen"
+            value={categorieFilter}
+            onChange={setCategorieFilter}
+            options={categorieOptions}
+          />
+          <CategorieInfoPopover align="left" />
+        </div>
         <FilterDropdown
           allLabel="Alle scopes"
           value={scopeFilter}
@@ -164,7 +168,10 @@ export default function ConcurrentenPage() {
       </section>
 
       <section className={styles.miniSection}>
-        <h2 className={styles.miniTitle}>Snel openen</h2>
+        <div className={styles.miniHeader}>
+          <h2 className={styles.miniTitle}>Snel openen</h2>
+          <CategorieInfoPopover align="right" />
+        </div>
         <p className={styles.miniSub}>
           Klik op een concurrent om het Rolodex-kaartje rechts te openen
           (inclusief activiteiten-log).

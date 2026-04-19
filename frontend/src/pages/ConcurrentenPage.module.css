@@ -50,6 +50,30 @@
   min-width: 200px;
 }
 
+.filterWithInfo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 240px;
+  min-width: 220px;
+}
+
+.filterWithInfo > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.miniHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.miniHeader .miniTitle {
+  margin-bottom: 0;
+}
+
 .resultCount {
   margin-left: auto;
   font-size: 12px;

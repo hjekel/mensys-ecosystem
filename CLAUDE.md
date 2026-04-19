@@ -247,3 +247,9 @@ npm start        # start backend
 - updateContact (utils/storage.js) en updateReseller (store/
   resellersStore.js) appenden automatisch bij status-wijziging
 - Gebruikt door WeekGoals voor 7-daagse tellingen
+
+## Fase A voltooid 2026-04-20
+
+Fase A voltooid 2026-04-20: rebrand Mensys' EcoSystem, lijst-default,
+UTF-8 dispatch fix, opener Modus 1 en 2, Rolodex persoonlijke context,
+concurrent-categorie-tooltips, statistieken 4-koloms grid, help-popups.

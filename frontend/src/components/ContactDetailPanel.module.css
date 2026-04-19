@@ -245,6 +245,16 @@
   padding-top: 12px;
 }
 
+.openerRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  background: #eef2fb;
+  border: 1px solid #c9d4ea;
+  border-radius: var(--radius-sm);
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }

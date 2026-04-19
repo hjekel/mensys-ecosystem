@@ -109,6 +109,83 @@
   gap: 16px;
 }
 
+.statsGrid4col {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+
+.statsGrid4col > * {
+  min-width: 0;
+}
+
+@media (max-width: 1199px) {
+  .statsGrid4col {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .statsGrid4col .jobCardCompact {
+    grid-column: 1 / -1;
+    order: 99;
+  }
+}
+
+.jobCardCompact {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px;
+  min-height: 0;
+}
+
+.jobHeaderCompact {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.jobHeaderCompact .cardTitle {
+  font-size: 13px;
+  margin-bottom: 0;
+}
+
+.jobSearchCompact {
+  width: 100%;
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+.jobTableWrapCompact {
+  flex: 1;
+  min-height: 0;
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.jobTableCompact {
+  font-size: 12px;
+}
+
+.jobTableCompact th {
+  padding: 6px 8px;
+  font-size: 10px;
+}
+
+.jobTableCompact td {
+  padding: 6px 8px;
+}
+
+.jobTableCompact .jobRank {
+  width: 32px;
+}
+
+.jobTableCompact .jobCount {
+  width: 60px;
+}
+
 .card {
   background: var(--color-white);
   border: 1px solid var(--color-border);

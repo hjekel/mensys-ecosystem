@@ -1,6 +1,7 @@
 import DagelijkseChecklist from '../components/DagelijkseChecklist.jsx';
 import WorkflowSop from '../components/WorkflowSop.jsx';
 import MarktpositieSection from '../components/MarktpositieSection.jsx';
+import LinkedInRitmeTip from '../components/LinkedInRitmeTip.jsx';
 import { DEFAULT_INSTELLINGEN } from '../utils/instellingen.js';
 import styles from './WelkomPage.module.css';
 
@@ -15,12 +16,13 @@ export default function WelkomPage({
   const s = instellingen || DEFAULT_INSTELLINGEN;
   const bedrijf = s.bedrijfsnaam || 'Mensys';
   const groet = s.gebruikersnaam
-    ? `Welkom ${s.gebruikersnaam} bij ${bedrijf} Ecosystem`
-    : `Welkom bij ${bedrijf} Ecosystem`;
+    ? `Welkom ${s.gebruikersnaam} bij ${bedrijf}' EcoSystem`
+    : `Welkom bij ${bedrijf}' EcoSystem`;
 
   return (
     <div className={styles.page}>
       <DagelijkseChecklist onNavigate={onNavigate} />
+      <LinkedInRitmeTip />
 
       <section className={styles.hero}>
         <button

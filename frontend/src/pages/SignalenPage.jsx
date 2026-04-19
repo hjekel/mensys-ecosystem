@@ -182,8 +182,12 @@ export default function SignalenPage({ contacts, setContacts, resellers, setRese
         naam,
         functie: inkoper.jobTitle || '',
         bedrijf: inkoper.company || '',
+        sector: inkoper.sector || '',
         signaal: `${signal.titel}${signal.samenvatting ? ' - ' + signal.samenvatting : ''}`,
         doelgroep: 'inkoper',
+        linkedinAbout: inkoper.linkedinAbout || '',
+        linkedinPosts: inkoper.linkedinPosts || '',
+        vorigeJobs: [inkoper.vorigeJob1 || '', inkoper.vorigeJob2 || '', inkoper.vorigeJob3 || ''],
       });
       setOpenerTargetId(inkoper.id);
       setOpenerTargetSource('inkopers');
@@ -196,8 +200,12 @@ export default function SignalenPage({ contacts, setContacts, resellers, setRese
         naam,
         functie: reseller.functietitel || '',
         bedrijf: reseller.bedrijf || '',
+        sector: reseller.resellerType || '',
         signaal: `${signal.titel}${signal.samenvatting ? ' - ' + signal.samenvatting : ''}`,
         doelgroep: 'reseller',
+        linkedinAbout: reseller.linkedinAbout || '',
+        linkedinPosts: reseller.linkedinPosts || '',
+        vorigeJobs: [reseller.vorigeJob1 || '', reseller.vorigeJob2 || '', reseller.vorigeJob3 || ''],
       });
       setOpenerTargetId(reseller.id);
       setOpenerTargetSource('resellers');

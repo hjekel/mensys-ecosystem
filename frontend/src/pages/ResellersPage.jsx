@@ -5,6 +5,7 @@ import ResellerListView from '../components/ResellerListView.jsx';
 import ResellerDetailPanel from '../components/ResellerDetailPanel.jsx';
 import ResellerFormModal from '../components/ResellerFormModal.jsx';
 import CSVImportModal from '../components/CSVImportModal.jsx';
+import OpenerModal from '../components/OpenerModal.jsx';
 import { resellersToCsv } from '../utils/resellerCsv.js';
 import { downloadCsv } from '../utils/csvParser.js';
 import {
@@ -15,6 +16,7 @@ import {
 import { applyResellerCleanup, planResellerCleanup } from '../utils/resellerCleanup.js';
 import { voegActiviteitToe, bouwLaatsteActiviteitIndex } from '../store/activiteitenStore.js';
 import { defaultUitvoerder } from '../utils/activiteitenUtils.js';
+import { leesVoorkeur, schrijfVoorkeur } from '../utils/viewVoorkeur.js';
 import styles from './ResellersPage.module.css';
 
 export default function ResellersPage({ resellers, setResellers, onFilteredCountChange, initialFilter }) {
@@ -23,12 +25,20 @@ export default function ResellersPage({ resellers, setResellers, onFilteredCount
   const [fteRange, setFteRange] = useState('');
   const [mensysFit, setMensysFit] = useState('');
   const [status, setStatus] = useState('');
-  const [view, setView] = useState('kanban');
+  const [view, setView] = useState(() => leesVoorkeur('resellers'));
+
+  function handleViewChange(next) {
+    setView(next);
+    schrijfVoorkeur('resellers', next);
+  }
 
   const [detail, setDetail] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
   const [formInitial, setFormInitial] = useState(null);
   const [activiteitenTick, setActiviteitenTick] = useState(0);
+  const [openerContext, setOpenerContext] = useState(null);
+  const [openerInitialModus, setOpenerInitialModus] = useState('koud');
+  const [openerTargetId, setOpenerTargetId] = useState(null);
 
   const laatsteActiviteitIndex = useMemo(
     () => bouwLaatsteActiviteitIndex('reseller'),
@@ -171,6 +181,33 @@ export default function ResellersPage({ resellers, setResellers, onFilteredCount
     downloadCsv(`mensys-resellers-${stamp}.csv`, csv);
   }
 
+  function openOpener(reseller, modus) {
+    const naam = `${reseller.voornaam || ''} ${reseller.achternaam || ''}`.trim();
+    setOpenerContext({
+      naam,
+      functie: reseller.functietitel || '',
+      bedrijf: reseller.bedrijf || '',
+      sector: reseller.resellerType || '',
+      signaal: '',
+      doelgroep: 'reseller',
+      linkedinAbout: reseller.linkedinAbout || '',
+      linkedinPosts: reseller.linkedinPosts || '',
+      vorigeJobs: [reseller.vorigeJob1 || '', reseller.vorigeJob2 || '', reseller.vorigeJob3 || ''],
+    });
+    setOpenerInitialModus(modus === 'warm' ? 'warm' : 'koud');
+    setOpenerTargetId(reseller.id);
+  }
+
+  function handleSaveOpenerAsNotitie(text) {
+    if (!openerTargetId) return;
+    const stamp = new Date().toLocaleDateString('nl-NL');
+    const prefix = `Opener (${stamp}):\n`;
+    const r = resellers.find((x) => x.id === openerTargetId);
+    if (!r) return;
+    const combined = r.notities ? `${r.notities}\n\n${prefix}${text}` : `${prefix}${text}`;
+    setResellers((prev) => updateReseller(prev, openerTargetId, { notities: combined }));
+  }
+
   function handleCleanup() {
     const { toRemove, toRename } = planResellerCleanup(resellers);
     if (toRemove.length === 0 && toRename.length === 0) {
@@ -201,7 +238,7 @@ export default function ResellersPage({ resellers, setResellers, onFilteredCount
         status={status}
         onStatusChange={setStatus}
         view={view}
-        onViewChange={setView}
+        onViewChange={handleViewChange}
         onAddClick={handleAdd}
         onImportClick={() => setImportOpen(true)}
         onExportClick={handleExport}
@@ -235,6 +272,19 @@ export default function ResellersPage({ resellers, setResellers, onFilteredCount
         onDelete={handleDeleteFromDetail}
         onSave={handleSaveDetail}
         onActiviteitenChange={() => setActiviteitenTick((t) => t + 1)}
+        onUpdateContext={handleSaveDetail}
+        onOpenOpener={openOpener}
+      />
+
+      <OpenerModal
+        open={Boolean(openerContext)}
+        context={openerContext}
+        initialModus={openerInitialModus}
+        onClose={() => {
+          setOpenerContext(null);
+          setOpenerTargetId(null);
+        }}
+        onSaveAsNotitie={handleSaveOpenerAsNotitie}
       />
 
       <ResellerFormModal

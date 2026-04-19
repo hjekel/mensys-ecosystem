@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import SectorBadge from './SectorBadge.jsx';
 import ActiviteitenLogTab from './ActiviteitenLog/ActiviteitenLogTab.jsx';
+import PersoonlijkeContextSectie from './PersoonlijkeContextSectie.jsx';
 import styles from './ContactDetailPanel.module.css';
 import { STATUSES } from '@shared/constants.js';
 
@@ -12,6 +13,8 @@ export default function ContactDetailPanel({
   onStatusChange,
   contactType = 'inkoper',
   onActiviteitenChange,
+  onUpdateContext,
+  onOpenOpener,
 }) {
   const [tab, setTab] = useState('gegevens');
 
@@ -128,6 +131,32 @@ export default function ContactDetailPanel({
           <div className={styles.section}>
             <label className={styles.label}>Notities</label>
             <div className={styles.notes}>{contact.notes}</div>
+          </div>
+        )}
+
+        {onUpdateContext && (
+          <PersoonlijkeContextSectie
+            record={contact}
+            onSave={onUpdateContext}
+          />
+        )}
+
+        {onOpenOpener && (
+          <div className={styles.openerRow}>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => onOpenOpener(contact, 'koud')}
+            >
+              Koude opener
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => onOpenOpener(contact, 'warm')}
+            >
+              Warm bericht
+            </button>
           </div>
         )}
 

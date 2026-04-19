@@ -147,7 +147,7 @@ export default function App() {
       </main>
 
       <footer className={styles.footer}>
-        <span>{instellingen.bedrijfsnaam || 'Mensys'} Ecosystem App v{__APP_VERSION__}</span>
+        <span>{instellingen.bedrijfsnaam || 'Mensys'}' EcoSystem App v{__APP_VERSION__}</span>
         <span className={styles.footerDot}>·</span>
         <span title={__APP_BUILD_DATE__}>
           Laatst bijgewerkt: {formatBuildDate(__APP_BUILD_DATE__)}

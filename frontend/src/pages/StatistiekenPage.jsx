@@ -64,7 +64,7 @@ export default function StatistiekenPage({
         )}
       </Modal>
 
-      <div className={styles.grid}>
+      <div className={styles.statsGrid4col}>
         <BarCard
           title="Verdeling per sector"
           items={SECTORS.map((s) => ({
@@ -97,12 +97,13 @@ export default function StatistiekenPage({
           total={stats.total}
           onItemClick={(it) => goInkopers({ status: it.label })}
         />
-      </div>
 
-      <JobTitlesCard
-        items={jobTitleStats}
-        onItemClick={(it) => goInkopers({ jobTitle: it.label })}
-      />
+        <JobTitlesCard
+          compact
+          items={jobTitleStats}
+          onItemClick={(it) => goInkopers({ jobTitle: it.label })}
+        />
+      </div>
 
       <div className={styles.sectionDivider}>
         <h2 className={styles.sectionTitle}>Resellers</h2>
@@ -210,7 +211,7 @@ export default function StatistiekenPage({
   );
 }
 
-function JobTitlesCard({ items, onItemClick }) {
+function JobTitlesCard({ items, onItemClick, compact = false }) {
   const [query, setQuery] = useState('');
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -219,14 +220,19 @@ function JobTitlesCard({ items, onItemClick }) {
   }, [items, query]);
   const totalInList = filtered.reduce((sum, it) => sum + it.value, 0);
 
+  const cardClass = compact ? `${styles.card} ${styles.jobCardCompact}` : styles.card;
+  const titleText = compact
+    ? `Functietitels (${items.length})`
+    : `Functietitels (${items.length} unieke, ${totalInList.toLocaleString('nl-NL')} contacten)`;
+
   return (
-    <div className={styles.card}>
-      <div className={styles.jobHeader}>
-        <h3 className={styles.cardTitle}>Functietitels ({items.length} unieke, {totalInList.toLocaleString('nl-NL')} contacten)</h3>
+    <div className={cardClass}>
+      <div className={compact ? styles.jobHeaderCompact : styles.jobHeader}>
+        <h3 className={styles.cardTitle}>{titleText}</h3>
         <input
           type="text"
-          className={`input ${styles.jobSearch}`}
-          placeholder="Zoek functietitel"
+          className={`input ${compact ? styles.jobSearchCompact : styles.jobSearch}`}
+          placeholder={compact ? 'Zoek' : 'Zoek functietitel'}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -234,8 +240,8 @@ function JobTitlesCard({ items, onItemClick }) {
       {filtered.length === 0 ? (
         <div className={styles.empty}>Geen functietitels gevonden.</div>
       ) : (
-        <div className={styles.jobTableWrap}>
-          <table className={styles.jobTable}>
+        <div className={compact ? styles.jobTableWrapCompact : styles.jobTableWrap}>
+          <table className={compact ? `${styles.jobTable} ${styles.jobTableCompact}` : styles.jobTable}>
             <thead>
               <tr>
                 <th className={styles.jobRank}>#</th>
