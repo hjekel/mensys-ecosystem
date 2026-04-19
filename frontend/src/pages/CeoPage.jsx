@@ -50,6 +50,7 @@ export default function CeoPage({ ceos, setCeos, onFilteredCountChange }) {
   const [status, setStatus] = useState('');
   const [jobTitle, setJobTitle] = useState('');
   const [aiTool, setAiTool] = useState('');
+  const [bron, setBron] = useState('');
   const [view, setView] = useState('kanban');
 
   const [detail, setDetail] = useState(null);
@@ -65,13 +66,14 @@ export default function CeoPage({ ceos, setCeos, onFilteredCountChange }) {
       if (status && c.status !== status) return false;
       if (jobTitle && c.jobTitle !== jobTitle) return false;
       if (aiTool && !hasAiTool(c, aiTool)) return false;
+      if (bron && (c.source || c.bron || '') !== bron) return false;
       if (q) {
         const hay = `${c.firstName || ''} ${c.lastName || ''} ${c.company || ''} ${c.jobTitle || ''} ${c.keywords || ''}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     });
-  }, [ceos, query, sector, fte, status, jobTitle, aiTool]);
+  }, [ceos, query, sector, fte, status, jobTitle, aiTool, bron]);
 
   useEffect(() => {
     if (onFilteredCountChange) onFilteredCountChange(filtered.length);
@@ -94,6 +96,7 @@ export default function CeoPage({ ceos, setCeos, onFilteredCountChange }) {
     const statusCounts = {};
     const jobTitleCounts = {};
     const aiToolCounts = {};
+    const bronCounts = {};
     ceos.forEach((c) => {
       if (!matchQuery(c)) return;
       const passSector = !sector || c.sector === sector;
@@ -101,23 +104,28 @@ export default function CeoPage({ ceos, setCeos, onFilteredCountChange }) {
       const passStatus = !status || c.status === status;
       const passJobTitle = !jobTitle || c.jobTitle === jobTitle;
       const passAiTool = !aiTool || hasAiTool(c, aiTool);
-      if (passFte && passStatus && passJobTitle && passAiTool && c.sector) {
+      const passBron = !bron || (c.source || c.bron || '') === bron;
+      if (passFte && passStatus && passJobTitle && passAiTool && passBron && c.sector) {
         sectorCounts[c.sector] = (sectorCounts[c.sector] || 0) + 1;
       }
-      if (passSector && passStatus && passJobTitle && passAiTool && c.fteCategory) {
+      if (passSector && passStatus && passJobTitle && passAiTool && passBron && c.fteCategory) {
         fteCounts[c.fteCategory] = (fteCounts[c.fteCategory] || 0) + 1;
       }
-      if (passSector && passFte && passJobTitle && passAiTool && c.status) {
+      if (passSector && passFte && passJobTitle && passAiTool && passBron && c.status) {
         statusCounts[c.status] = (statusCounts[c.status] || 0) + 1;
       }
-      if (passSector && passFte && passStatus && passAiTool && c.jobTitle) {
+      if (passSector && passFte && passStatus && passAiTool && passBron && c.jobTitle) {
         jobTitleCounts[c.jobTitle] = (jobTitleCounts[c.jobTitle] || 0) + 1;
       }
-      if (passSector && passFte && passStatus && passJobTitle) {
+      if (passSector && passFte && passStatus && passJobTitle && passBron) {
         const tools = detectAiTools(c);
         for (const t of tools) {
           aiToolCounts[t] = (aiToolCounts[t] || 0) + 1;
         }
+      }
+      if (passSector && passFte && passStatus && passJobTitle && passAiTool) {
+        const b = c.source || c.bron || '';
+        if (b) bronCounts[b] = (bronCounts[b] || 0) + 1;
       }
     });
     return {
@@ -126,8 +134,9 @@ export default function CeoPage({ ceos, setCeos, onFilteredCountChange }) {
       status: statusCounts,
       jobTitle: jobTitleCounts,
       aiTool: aiToolCounts,
+      bron: bronCounts,
     };
-  }, [ceos, query, sector, fte, status, jobTitle, aiTool]);
+  }, [ceos, query, sector, fte, status, jobTitle, aiTool, bron]);
 
   const jobTitleOptions = useMemo(() => {
     const counts = facetCounts.jobTitle || {};
@@ -138,6 +147,13 @@ export default function CeoPage({ ceos, setCeos, onFilteredCountChange }) {
 
   const aiToolOptions = useMemo(() => {
     const counts = facetCounts.aiTool || {};
+    return Object.entries(counts)
+      .map(([k, v]) => ({ value: k, label: k, count: v }))
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+  }, [facetCounts]);
+
+  const bronOptions = useMemo(() => {
+    const counts = facetCounts.bron || {};
     return Object.entries(counts)
       .map(([k, v]) => ({ value: k, label: k, count: v }))
       .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
@@ -220,6 +236,9 @@ export default function CeoPage({ ceos, setCeos, onFilteredCountChange }) {
         aiTool={aiTool}
         onAiToolChange={setAiTool}
         aiToolOptions={aiToolOptions}
+        bron={bron}
+        onBronChange={setBron}
+        bronOptions={bronOptions}
         view={view}
         onViewChange={setView}
         onAddClick={handleAdd}

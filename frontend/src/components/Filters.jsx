@@ -28,6 +28,9 @@ export default function Filters({
   aiTool,
   onAiToolChange,
   aiToolOptions,
+  bron,
+  onBronChange,
+  bronOptions,
 }) {
   const sectorCounts = facetCounts?.sector || {};
   const fteCounts = facetCounts?.fte || {};
@@ -133,6 +136,14 @@ export default function Filters({
               value={aiTool || ''}
               onChange={onAiToolChange}
               options={aiToolOptions}
+            />
+          )}
+          {bronOptions && onBronChange && (
+            <FilterDropdown
+              allLabel="Alle bronnen"
+              value={bron || ''}
+              onChange={onBronChange}
+              options={bronOptions}
             />
           )}
         </div>
