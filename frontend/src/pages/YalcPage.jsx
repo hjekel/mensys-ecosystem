@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import Papa from 'papaparse';
 import FilterDropdown from '../components/FilterDropdown.jsx';
 import ContactDetailPanel from '../components/ContactDetailPanel.jsx';
 import ResellerDetailPanel from '../components/ResellerDetailPanel.jsx';
@@ -128,6 +129,50 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
       const csv = contactsToCsv(records);
       downloadCsv(`mensys-yalc-inkopers-${stamp}.csv`, csv);
     }
+  }
+
+  function handleDispatch() {
+    const dispatchRows = visible.slice(0, 50);
+    if (dispatchRows.length === 0) {
+      alert('Geen contacten zichtbaar om te dispatchen.');
+      return;
+    }
+    const isReseller = source === 'resellers';
+    const campaign_tag = source === 'ceo' ? 'A' : source === 'inkopers' ? 'B' : 'C';
+    const rows = dispatchRows.map((row) => {
+      const rec = row.record;
+      const firstName = isReseller ? rec.voornaam : rec.firstName;
+      const lastName = isReseller ? rec.achternaam : rec.lastName;
+      const linkedin = isReseller ? rec.linkedin : rec.linkedinUrl;
+      const company = isReseller ? rec.bedrijf : rec.company;
+      const notesField = isReseller ? rec.notities : rec.notes;
+      return {
+        first_name: firstName || '',
+        last_name: lastName || '',
+        linkedin_url: linkedin || '',
+        email: rec.email || '',
+        campaign_tag,
+        custom_var_1: company || '',
+        custom_var_2: extractNlOpener(notesField),
+        mensys_id: rec.id || '',
+      };
+    });
+    const fields = [
+      'first_name',
+      'last_name',
+      'linkedin_url',
+      'email',
+      'campaign_tag',
+      'custom_var_1',
+      'custom_var_2',
+      'mensys_id',
+    ];
+    const csv = Papa.unparse({
+      fields,
+      data: rows.map((r) => fields.map((f) => r[f])),
+    });
+    const stamp = new Date().toISOString().slice(0, 10);
+    downloadCsv(`dripify_dispatch_${stamp}.csv`, csv);
   }
 
   // Inkopers detail panel handlers
@@ -373,6 +418,14 @@ export default function YalcPage({ contacts, setContacts, resellers, setReseller
         <button type="button" className="btn btn-ghost" onClick={handleExport}>
           Exporteer top {Math.min(topN, filtered.length)} CSV
         </button>
+        <button
+          type="button"
+          className="btn btn-accent"
+          onClick={handleDispatch}
+          title="Download CSV voor Dripify import (max 50 contacten)"
+        >
+          Dispatch naar Dripify ({Math.min(visible.length, 50)})
+        </button>
       </section>
 
       <section className={styles.legendWrap}>
@@ -571,6 +624,13 @@ function StatButton({ label, value, suffix, active, onClick }) {
       <div className={styles.statLabel}>{label}</div>
     </button>
   );
+}
+
+function extractNlOpener(notes) {
+  if (!notes) return '';
+  const matches = [...String(notes).matchAll(/NL:\s*([\s\S]+?)(?=\n\nOpener \(|\n\nEN:\s|$)/g)];
+  if (matches.length === 0) return '';
+  return matches[matches.length - 1][1].trim();
 }
 
 function labelForBand(band) {
