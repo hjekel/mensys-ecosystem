@@ -12,9 +12,10 @@
   box-shadow: var(--shadow-sm);
   padding: 18px 22px;
   display: flex;
-  justify-content: space-between;
   align-items: flex-start;
+  justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .title {
@@ -32,133 +33,26 @@
   max-width: 760px;
 }
 
-.cogBtn {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-sm);
-  color: var(--color-text-secondary);
-  background: var(--color-bg);
+.toggles {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.toggle {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  transition: background 0.15s, color 0.15s;
-  flex-shrink: 0;
-}
-
-.cogBtn:hover {
-  background: var(--color-hover);
-  color: var(--color-blue);
-}
-
-.filters {
-  background: var(--color-white);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  padding: 10px 16px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-}
-
-.filters > :first-child,
-.filters > :nth-child(2) {
-  flex: 0 0 200px;
-  min-width: 180px;
-}
-
-.countNote {
-  margin-left: auto;
-  font-size: 12px;
-  color: var(--color-text-secondary);
-}
-
-.legend {
-  background: var(--color-white);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  padding: 12px 16px;
-}
-
-.legendTitle {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  margin-bottom: 8px;
-}
-
-.legendCard {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  background: var(--color-white);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
-  padding: 10px 12px;
-  font-size: 11px;
-  max-width: 280px;
-  display: flex;
-  flex-direction: column;
   gap: 6px;
-}
-
-.graphTitle {
-  fill: var(--color-text);
-  font-size: 22px;
-  font-weight: 700;
-  font-family: inherit;
-  letter-spacing: 0.3px;
-}
-
-.resellerLabel {
-  fill: var(--color-text);
-  font-size: 9px;
-  font-weight: 600;
-  font-family: inherit;
-  pointer-events: none;
-}
-
-.linkReseller {
-  stroke: rgba(0, 48, 135, 0.2);
-  stroke-width: 0.5;
-}
-
-.linkInkoper {
-  stroke: rgba(0, 0, 0, 0.12);
-  stroke-width: 0.5;
-}
-
-.legendRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-text);
-  padding: 3px 0;
+  background: var(--color-bg);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
 }
 
-.legendLabel {
-  color: var(--color-text-secondary);
-  font-weight: 600;
-  min-width: 90px;
-}
-
-.legendItem {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.swatch {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+.toggle input {
+  accent-color: var(--color-blue);
 }
 
 .graphWrap {
@@ -166,9 +60,8 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
-  padding: 10px;
+  padding: 16px;
   position: relative;
-  min-height: 600px;
 }
 
 .svg {
@@ -177,145 +70,153 @@
   display: block;
 }
 
-.ring {
-  fill: none;
-  stroke: #E5E7EB;
-  stroke-width: 1;
-  stroke-dasharray: 2 4;
-}
-
-.linkDashed {
-  stroke: #5c6a85;
-  stroke-width: 1;
-  stroke-dasharray: 4 4;
-  opacity: 0.4;
-}
-
-.linkThin {
-  stroke: var(--color-border);
-  stroke-width: 0.75;
-  opacity: 0.6;
-}
-
-.mensysLabel {
-  fill: #ffffff;
-  font-size: 28px;
+.sectionLabel {
+  fill: var(--color-text-secondary);
+  font-size: 11px;
   font-weight: 700;
+  letter-spacing: 1px;
   font-family: inherit;
 }
 
-.nodeName {
+.distribStrip text {
+  font-family: inherit;
+}
+
+.distribBlock {
+  cursor: help;
+  transition: transform 0.12s;
+}
+
+.distribBlock:hover rect {
+  stroke: var(--color-blue);
+}
+
+.distribName {
   fill: var(--color-text);
   font-size: 13px;
   font-weight: 600;
   font-family: inherit;
 }
 
-.nodeInteractive {
+.nodeBlock text {
+  font-family: inherit;
+}
+
+.blockTitle {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.blockCount {
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.blockSubtle {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+  text-align: center;
+  padding: 4px 6px;
+}
+
+.clickableBlock {
   cursor: pointer;
   transition: opacity 0.15s;
 }
 
-.nodeInteractive:hover {
-  opacity: 0.75;
+.clickableBlock:hover {
+  opacity: 0.85;
 }
 
-.nodeDistrib {
+.mensysNode {
   cursor: default;
 }
 
-.distribLabel {
-  fill: var(--color-text);
+.mensysM {
+  fill: #ffffff;
+  font-size: 46px;
+  font-weight: 700;
+  font-family: inherit;
+}
+
+.mensysLabel {
+  fill: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: inherit;
+}
+
+.mensysSub {
+  fill: rgba(255, 255, 255, 0.75);
+  font-size: 11px;
+  font-family: inherit;
+}
+
+.arrowLabel {
+  fill: var(--color-text-secondary);
+  font-size: 11px;
+  font-family: inherit;
+  font-style: italic;
+}
+
+.arrowLabelPrimary {
+  fill: var(--color-blue);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+.arrowLabelOrange {
+  fill: #E8500A;
   font-size: 11px;
   font-weight: 600;
   font-family: inherit;
 }
 
-.tooltip {
-  position: absolute;
-  top: 16px;
-  right: 16px;
+.arrowLabelSmall {
+  fill: var(--color-text-secondary);
+  font-size: 10px;
+  font-family: inherit;
+}
+
+.moneyLabel {
+  fill: #00a878;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: inherit;
+}
+
+.moneyLabelSmall {
+  fill: #00a878;
+  font-size: 9px;
+  font-weight: 700;
+  font-family: inherit;
+}
+
+.warnTitle {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+}
+
+.warnBody {
+  font-size: 12px;
+  color: var(--color-text);
+  line-height: 1.5;
+  padding: 2px 0;
+}
+
+.floatTooltip {
+  position: fixed;
   background: var(--color-text);
   color: var(--color-white);
-  padding: 8px 12px;
+  padding: 6px 10px;
   border-radius: var(--radius-sm);
   font-size: 12px;
-  box-shadow: var(--shadow-md);
   pointer-events: none;
-  max-width: 260px;
-}
-
-.ttName {
-  font-weight: 700;
-  margin-bottom: 2px;
-}
-
-.ttSub {
-  color: #D1D5DB;
-  font-size: 11px;
-}
-
-.configForm {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.configRow {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.configRow > label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-text);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-.sliderRow {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.sliderRow input[type='range'] {
-  flex: 1;
-  accent-color: var(--color-blue);
-}
-
-.sliderValue {
-  min-width: 36px;
-  text-align: right;
-  font-weight: 700;
-  color: var(--color-blue);
-  font-variant-numeric: tabular-nums;
-}
-
-.fitChecks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.checkLabel {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--color-text);
-  cursor: pointer;
-}
-
-.checkLabel input {
-  accent-color: var(--color-blue);
-}
-
-.configFooter {
-  display: flex;
-  justify-content: flex-end;
-  padding-top: 8px;
-  border-top: 1px solid var(--color-border);
+  box-shadow: var(--shadow-md);
+  z-index: 1000;
+  white-space: nowrap;
 }

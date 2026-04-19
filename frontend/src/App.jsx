@@ -130,9 +130,8 @@ export default function App() {
         {activeTab === 'ecosysteem' && (
           <EcosysteemPage
             contacts={contacts}
-            setContacts={setContactsState}
             resellers={resellers}
-            setResellers={setResellersState}
+            onNavigate={setActiveTab}
           />
         )}
         {activeTab === 'concurrenten' && <ConcurrentenPage />}

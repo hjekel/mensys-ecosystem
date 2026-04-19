@@ -1,183 +1,27 @@
-import { useMemo, useState } from 'react';
-import FilterDropdown from '../components/FilterDropdown.jsx';
-import Modal from '../components/Modal.jsx';
-import ContactDetailPanel from '../components/ContactDetailPanel.jsx';
-import ResellerDetailPanel from '../components/ResellerDetailPanel.jsx';
-import { rankInkopers, rankResellers } from '../utils/lhf.js';
-import { updateContact } from '../utils/storage.js';
-import { updateReseller, deleteReseller } from '../store/resellersStore.js';
-import {
-  MENSYS_FIT_COLORS,
-  MENSYS_FIT_SCORES,
-  SECTOR_COLORS,
-  SECTORS,
-  STATUSES,
-} from '@shared/constants.js';
+import { useState } from 'react';
 import styles from './EcosysteemPage.module.css';
 
-const DISTRIBUTEURS = ['ALSO', 'Copaco', 'Ingram Micro', 'TD SYNNEX', 'DSD Europe'];
+const DISTRIBUTEURS = [
+  { naam: 'ALSO', locatie: 'Straubenhardt (DE)' },
+  { naam: 'Copaco', locatie: 'Eindhoven' },
+  { naam: 'Ingram Micro', locatie: 'Utrecht' },
+  { naam: 'TD SYNNEX', locatie: 'Utrecht' },
+  { naam: 'DSD Europe', locatie: 'Zoetermeer' },
+];
 
-const RING_R = {
-  distributeurs: 200,
-  resellers: 350,
-  inkopers: 480,
-};
+const VENDOR_SAMPLE = 'OpenAI · Canva · Figma · Miro · Anthropic · Kaspersky + 694 meer';
 
-export default function EcosysteemPage({ contacts, setContacts, resellers, setResellers }) {
-  const [maxResellers, setMaxResellers] = useState(50);
-  const [maxInkopers, setMaxInkopers] = useState(30);
-  const [fitFilter, setFitFilter] = useState({
-    Hoog: true,
-    Midden: true,
-    Onderzoeken: true,
-    Onbekend: true,
-  });
-  const [showDistributeurs, setShowDistributeurs] = useState(true);
-  const [sectorFilter, setSectorFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+export default function EcosysteemPage({ contacts = [], resellers = [], onNavigate }) {
+  const [showGeldstroom, setShowGeldstroom] = useState(true);
+  const [showAantallen, setShowAantallen] = useState(true);
+  const [tooltip, setTooltip] = useState(null);
 
-  const [configOpen, setConfigOpen] = useState(false);
-  const [detail, setDetail] = useState(null);
-  const [detailSource, setDetailSource] = useState(null);
-  const [hover, setHover] = useState(null);
+  const inkopersCount = contacts.length;
+  const resellersCount = resellers.length;
 
-  const resellerRanked = useMemo(() => rankResellers(resellers), [resellers]);
-  const inkopersRanked = useMemo(() => rankInkopers(contacts), [contacts]);
-
-  const resellerNodes = useMemo(() => {
-    const filtered = resellerRanked.filter((row) => {
-      const fit = row.record.mensysFit || 'Onbekend';
-      if (!fitFilter[fit]) return false;
-      if (statusFilter && row.record.status !== statusFilter) return false;
-      return true;
-    });
-    const top = filtered.slice(0, maxResellers);
-    const count = top.length;
-    return top.map((row, i) => {
-      const angle = count > 0 ? (i / count) * 2 * Math.PI - Math.PI / 2 : 0;
-      const fit = row.record.mensysFit || 'Onbekend';
-      const colors = MENSYS_FIT_COLORS[fit] || MENSYS_FIT_COLORS.Onbekend;
-      const r = 7 + (row.score / 100) * 13;
-      return {
-        id: row.record.id,
-        type: 'reseller',
-        name: row.record.bedrijf || '(onbekend)',
-        score: row.score,
-        subLabel: fit,
-        x: RING_R.resellers * Math.cos(angle),
-        y: RING_R.resellers * Math.sin(angle),
-        r,
-        color: colors.fg,
-        record: row.record,
-      };
-    });
-  }, [resellerRanked, fitFilter, statusFilter, maxResellers]);
-
-  const inkoperNodes = useMemo(() => {
-    const filtered = inkopersRanked.filter((row) => {
-      if (sectorFilter && row.record.sector !== sectorFilter) return false;
-      if (statusFilter && row.record.status !== statusFilter) return false;
-      return true;
-    });
-    const top = filtered.slice(0, maxInkopers);
-    const count = top.length;
-    return top.map((row, i) => {
-      const angle = count > 0 ? (i / count) * 2 * Math.PI - Math.PI / 2 : 0;
-      const color = SECTOR_COLORS[row.record.sector] || '#6B7280';
-      const r = 6 + (row.score / 100) * 10;
-      return {
-        id: row.record.id,
-        type: 'inkoper',
-        name: row.record.company || '(onbekend)',
-        score: row.score,
-        subLabel: row.record.sector || 'Overig',
-        x: RING_R.inkopers * Math.cos(angle),
-        y: RING_R.inkopers * Math.sin(angle),
-        r,
-        color,
-        record: row.record,
-      };
-    });
-  }, [inkopersRanked, sectorFilter, statusFilter, maxInkopers]);
-
-  const distribNodes = useMemo(() => {
-    if (!showDistributeurs) return [];
-    return DISTRIBUTEURS.map((name, i) => {
-      const angle = (i / DISTRIBUTEURS.length) * 2 * Math.PI - Math.PI / 2;
-      return {
-        id: `d-${i}`,
-        type: 'distributeur',
-        name,
-        subLabel: 'Distributeur',
-        score: null,
-        x: RING_R.distributeurs * Math.cos(angle),
-        y: RING_R.distributeurs * Math.sin(angle),
-        r: 24,
-        color: '#5c6a85',
-      };
-    });
-  }, [showDistributeurs]);
-
-  function openNode(node) {
-    if (node.type === 'distributeur') return;
-    setDetail(node.record);
-    setDetailSource(node.type === 'reseller' ? 'resellers' : 'inkopers');
+  function goTo(tab) {
+    if (onNavigate) onNavigate(tab);
   }
-
-  function handleInkoperStatusChange(contact, newStatus) {
-    if (contact.status === newStatus) return;
-    setContacts((prev) => updateContact(prev, contact.id, { status: newStatus }));
-    setDetail((d) => (d && d.id === contact.id ? { ...d, status: newStatus } : d));
-  }
-
-  function handleInkoperDelete(contact) {
-    const name = `${contact.firstName || ''} ${contact.lastName || ''}`.trim() || 'dit contact';
-    if (!confirm(`Verwijder ${name}?`)) return;
-    setContacts((prev) => prev.filter((c) => c.id !== contact.id));
-    setDetail(null);
-    setDetailSource(null);
-  }
-
-  function handleResellerSave(id, values) {
-    setResellers((prev) => updateReseller(prev, id, values));
-    setDetail((d) => (d && d.id === id ? { ...d, ...values } : d));
-  }
-
-  function handleResellerDelete(reseller) {
-    const label = reseller.bedrijf ||
-      `${reseller.voornaam || ''} ${reseller.achternaam || ''}`.trim() ||
-      'deze reseller';
-    if (!confirm(`Verwijder ${label}?`)) return;
-    setResellers((prev) => deleteReseller(prev, reseller.id));
-    setDetail(null);
-    setDetailSource(null);
-  }
-
-  const sectorCountsMap = useMemo(() => {
-    const m = {};
-    for (const c of contacts) if (c.sector) m[c.sector] = (m[c.sector] || 0) + 1;
-    return m;
-  }, [contacts]);
-
-  const statusCountsMap = useMemo(() => {
-    const m = {};
-    for (const c of contacts) if (c.status) m[c.status] = (m[c.status] || 0) + 1;
-    for (const r of resellers) if (r.status) m[r.status] = (m[r.status] || 0) + 1;
-    return m;
-  }, [contacts, resellers]);
-
-  const sectorOptions = SECTORS.map((s) => ({
-    value: s,
-    label: s,
-    count: sectorCountsMap[s] || 0,
-  }));
-  const statusOptions = STATUSES.map((s) => ({
-    value: s,
-    label: s,
-    count: statusCountsMap[s] || 0,
-  }));
-
-  const TOP_RESELLER_LABEL_COUNT = 10;
 
   return (
     <div className={styles.page}>
@@ -185,318 +29,240 @@ export default function EcosysteemPage({ contacts, setContacts, resellers, setRe
         <div>
           <h1 className={styles.title}>Ecosysteem</h1>
           <p className={styles.subtitle}>
-            Klikbare marktvisualisatie van Mensys met distributeurs, resellers
-            en procurement managers. Klik op een knooppunt om het detail-panel
-            te openen. Hover voor naam en score.
+            Stroomdiagram van geld- en relatiestromen rondom Mensys: van
+            vendors via distributeurs naar Mensys, en verder naar resellers
+            en eindklanten.
           </p>
         </div>
-        <button
-          type="button"
-          className={styles.cogBtn}
-          onClick={() => setConfigOpen(true)}
-          aria-label="Configuratie"
-          title="Configuratie"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33h.01a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-      </section>
-
-      <section className={styles.filters}>
-        <FilterDropdown
-          allLabel="Alle sectoren"
-          value={sectorFilter}
-          onChange={setSectorFilter}
-          options={sectorOptions}
-        />
-        <FilterDropdown
-          allLabel="Alle statussen"
-          value={statusFilter}
-          onChange={setStatusFilter}
-          options={statusOptions}
-        />
-        <span className={styles.countNote}>
-          {resellerNodes.length} resellers, {inkoperNodes.length} inkopers getoond
-        </span>
+        <div className={styles.toggles}>
+          <label className={styles.toggle}>
+            <input
+              type="checkbox"
+              checked={showGeldstroom}
+              onChange={(e) => setShowGeldstroom(e.target.checked)}
+            />
+            Toon geldstroom
+          </label>
+          <label className={styles.toggle}>
+            <input
+              type="checkbox"
+              checked={showAantallen}
+              onChange={(e) => setShowAantallen(e.target.checked)}
+            />
+            Toon aantallen
+          </label>
+        </div>
       </section>
 
       <div className={styles.graphWrap}>
-        <svg viewBox="-560 -560 1120 1120" className={styles.svg}>
+        <svg viewBox="0 0 1200 620" className={styles.svg} xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <filter id="mensys-shadow" x="-50%" y="-50%" width="200%" height="200%">
-              <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#003087" floodOpacity="0.25" />
-            </filter>
-            <filter id="node-shadow" x="-50%" y="-50%" width="200%" height="200%">
-              <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#000" floodOpacity="0.12" />
-            </filter>
+            <marker id="arrow-thick" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0 0 L10 5 L0 10 z" fill="#003087" />
+            </marker>
+            <marker id="arrow-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0 0 L10 5 L0 10 z" fill="#E8500A" />
+            </marker>
+            <marker id="arrow-dashed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+              <path d="M0 0 L10 5 L0 10 z" fill="#6B7280" />
+            </marker>
+            <marker id="arrow-thin" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+              <path d="M0 0 L10 5 L0 10 z" fill="#5c6a85" />
+            </marker>
           </defs>
 
-          <rect x="-560" y="-560" width="1120" height="1120" fill="#FAFAF8" />
+          <rect x="0" y="0" width="1200" height="620" fill="#FAFAF8" />
 
-          <text x="0" y="-510" textAnchor="middle" className={styles.graphTitle}>
-            Mensys Ecosysteem — NL Markt
-          </text>
-
-          <circle cx="0" cy="0" r={RING_R.distributeurs} className={styles.ring} />
-          <circle cx="0" cy="0" r={RING_R.resellers} className={styles.ring} />
-          <circle cx="0" cy="0" r={RING_R.inkopers} className={styles.ring} />
-
-          <g>
-            {distribNodes.map((n) => (
-              <line
-                key={`l-${n.id}`}
-                x1="0"
-                y1="0"
-                x2={n.x}
-                y2={n.y}
-                className={styles.linkDashed}
-              />
-            ))}
-            {resellerNodes.map((n) => (
-              <line
-                key={`l-${n.id}`}
-                x1="0"
-                y1="0"
-                x2={n.x}
-                y2={n.y}
-                className={styles.linkReseller}
-              />
-            ))}
-            {inkoperNodes.map((n) => (
-              <line
-                key={`l-${n.id}`}
-                x1="0"
-                y1="0"
-                x2={n.x}
-                y2={n.y}
-                className={styles.linkInkoper}
-              />
-            ))}
-          </g>
-
-          <g filter="url(#mensys-shadow)">
-            <circle cx="0" cy="0" r="60" fill="#003087" stroke="#ffffff" strokeWidth="3" />
-            <text
-              x="0"
-              y="0"
-              dy="0.35em"
-              textAnchor="middle"
-              className={styles.mensysLabel}
-            >
-              M
+          {/* Distributeurs strip */}
+          <g className={styles.distribStrip}>
+            <text x="600" y="30" textAnchor="middle" className={styles.sectionLabel}>
+              DISTRIBUTEURS
             </text>
-          </g>
-          <text x="0" y="82" textAnchor="middle" className={styles.nodeName}>
-            Mensys
-          </text>
-
-          {distribNodes.map((n) => (
-            <NodeG
-              key={n.id}
-              node={n}
-              onHover={setHover}
-              onClick={openNode}
-            />
-          ))}
-          {resellerNodes.map((n, idx) => (
-            <NodeG
-              key={n.id}
-              node={n}
-              onHover={setHover}
-              onClick={openNode}
-              showLabel={idx < TOP_RESELLER_LABEL_COUNT}
-            />
-          ))}
-          {inkoperNodes.map((n) => (
-            <NodeG
-              key={n.id}
-              node={n}
-              onHover={setHover}
-              onClick={openNode}
-            />
-          ))}
-        </svg>
-
-        <div className={styles.legendCard}>
-          <div className={styles.legendRow}>
-            <span className={styles.legendLabel}>Mensys Fit</span>
-            {MENSYS_FIT_SCORES.map((s) => {
-              const c = MENSYS_FIT_COLORS[s];
+            {DISTRIBUTEURS.map((d, i) => {
+              const n = DISTRIBUTEURS.length;
+              const totalWidth = n * 120 + (n - 1) * 12;
+              const startX = 600 - totalWidth / 2;
+              const x = startX + i * 132;
               return (
-                <span key={s} className={styles.legendItem}>
-                  <span className={styles.swatch} style={{ background: c.fg }} />
-                  {s}
-                </span>
+                <g
+                  key={d.naam}
+                  transform={`translate(${x}, 45)`}
+                  className={styles.distribBlock}
+                  onMouseEnter={(e) => setTooltip({ text: `${d.naam} · ${d.locatie}`, x: e.clientX, y: e.clientY })}
+                  onMouseLeave={() => setTooltip(null)}
+                >
+                  <rect width="120" height="42" rx="8" fill="#F2F5FB" stroke="#E5E7EB" />
+                  <text x="60" y="26" textAnchor="middle" className={styles.distribName}>
+                    {d.naam}
+                  </text>
+                </g>
               );
             })}
-          </div>
-          <div className={styles.legendRow}>
-            <span className={styles.legendLabel}>Sector</span>
-            {SECTORS.map((s) => (
-              <span key={s} className={styles.legendItem}>
-                <span className={styles.swatch} style={{ background: SECTOR_COLORS[s] }} />
-                {s}
-              </span>
-            ))}
-          </div>
-        </div>
+          </g>
 
-        {hover && (
-          <div className={styles.tooltip}>
-            <div className={styles.ttName}>{hover.name}</div>
-            <div className={styles.ttSub}>
-              {hover.subLabel}
-              {hover.score !== null ? ` · YALC ${hover.score}` : ''}
-            </div>
+          {/* Vendors block (left) */}
+          <g className={styles.nodeBlock}>
+            <rect x="40" y="240" width="220" height="140" rx="14" fill="#E8EEF7" stroke="#c9d4ea" strokeWidth="1.5" />
+            <text x="150" y="272" textAnchor="middle" className={styles.blockTitle} fill="#003087">
+              Vendors
+            </text>
+            {showAantallen && (
+              <text x="150" y="294" textAnchor="middle" className={styles.blockCount} fill="#003087">
+                700+
+              </text>
+            )}
+            <foreignObject x="54" y="304" width="192" height="70">
+              <div className={styles.blockSubtle}>{VENDOR_SAMPLE}</div>
+            </foreignObject>
+          </g>
+
+          {/* Mensys block (center) */}
+          <g
+            className={styles.mensysNode}
+            transform="translate(510, 240)"
+          >
+            <rect width="180" height="140" rx="14" fill="#003087" stroke="#ffffff" strokeWidth="3" filter="url(#mensys-shadow)" />
+            <text x="90" y="66" textAnchor="middle" className={styles.mensysM}>
+              M
+            </text>
+            <text x="90" y="96" textAnchor="middle" className={styles.mensysLabel}>
+              Mensys
+            </text>
+            <text x="90" y="116" textAnchor="middle" className={styles.mensysSub}>
+              Haarlem · 25+ jaar
+            </text>
+          </g>
+
+          {/* Resellers block */}
+          <g
+            className={`${styles.nodeBlock} ${styles.clickableBlock}`}
+            onClick={() => goTo('resellers')}
+          >
+            <rect x="930" y="180" width="220" height="120" rx="14" fill="#E6F7F2" stroke="#a7e9cf" strokeWidth="1.5" />
+            <text x="1040" y="212" textAnchor="middle" className={styles.blockTitle} fill="#00a878">
+              IT Resellers · MSPs
+            </text>
+            {showAantallen && (
+              <text x="1040" y="234" textAnchor="middle" className={styles.blockCount} fill="#00a878">
+                {resellersCount.toLocaleString('nl-NL')} in DB
+              </text>
+            )}
+            <foreignObject x="944" y="244" width="192" height="50">
+              <div className={styles.blockSubtle}>Primaire doelgroep · 60% omzet</div>
+            </foreignObject>
+          </g>
+
+          {/* Eindklanten block */}
+          <g
+            className={`${styles.nodeBlock} ${styles.clickableBlock}`}
+            onClick={() => goTo('inkopers')}
+          >
+            <rect x="930" y="320" width="220" height="120" rx="14" fill="#FFF3EB" stroke="#fed7aa" strokeWidth="1.5" />
+            <text x="1040" y="352" textAnchor="middle" className={styles.blockTitle} fill="#E8500A">
+              Eindklanten · Inkopers
+            </text>
+            {showAantallen && (
+              <text x="1040" y="374" textAnchor="middle" className={styles.blockCount} fill="#E8500A">
+                {inkopersCount.toLocaleString('nl-NL')} in DB
+              </text>
+            )}
+            <foreignObject x="944" y="384" width="192" height="50">
+              <div className={styles.blockSubtle}>Margetechnisch interessant</div>
+            </foreignObject>
+          </g>
+
+          {/* Arrows */}
+          {/* Vendors -> Mensys (dashed) */}
+          <line
+            x1="260" y1="310" x2="510" y2="310"
+            stroke="#6B7280" strokeWidth="1.5" strokeDasharray="6 5"
+            markerEnd="url(#arrow-dashed)"
+          />
+          <text x="385" y="302" textAnchor="middle" className={styles.arrowLabel}>
+            licenties inkopen
+          </text>
+
+          {/* Distributeurs -> Mensys (dashed, vertical) */}
+          <line
+            x1="600" y1="90" x2="600" y2="238"
+            stroke="#6B7280" strokeWidth="1.5" strokeDasharray="6 5"
+            markerEnd="url(#arrow-dashed)"
+          />
+          <text x="612" y="170" textAnchor="start" className={styles.arrowLabel}>
+            doorleveren
+          </text>
+
+          {/* Mensys -> Resellers (thick blue) */}
+          <path
+            d="M 690 290 C 790 290, 860 230, 930 230"
+            fill="none" stroke="#003087" strokeWidth="3"
+            markerEnd="url(#arrow-thick)"
+          />
+          <text x="810" y="220" textAnchor="middle" className={styles.arrowLabelPrimary}>
+            licenties op factuur · euro · geen creditcard
+          </text>
+          {showGeldstroom && (
+            <text x="810" y="260" textAnchor="middle" className={styles.moneyLabel}>
+              € factuur · voorfinancieren
+            </text>
+          )}
+
+          {/* Mensys -> Eindklanten (thinner orange) */}
+          <path
+            d="M 690 330 C 790 340, 860 380, 930 380"
+            fill="none" stroke="#E8500A" strokeWidth="2"
+            markerEnd="url(#arrow-orange)"
+          />
+          <text x="810" y="370" textAnchor="middle" className={styles.arrowLabelOrange}>
+            direct (secundair)
+          </text>
+
+          {/* Resellers -> Eindklanten (thin) */}
+          <path
+            d="M 1040 300 C 1050 340, 1050 320, 1040 320"
+            fill="none" stroke="#5c6a85" strokeWidth="1.2"
+            markerEnd="url(#arrow-thin)"
+          />
+          <text x="1070" y="310" textAnchor="start" className={styles.arrowLabelSmall}>
+            implementatie + licenties
+          </text>
+          {showGeldstroom && (
+            <text x="1070" y="326" textAnchor="start" className={styles.moneyLabelSmall}>
+              € factuur + urentarief
+            </text>
+          )}
+
+          {/* Concentratie-waarschuwing (bottom right) */}
+          <g transform="translate(840, 490)">
+            <rect
+              x="0" y="0" width="320" height="110"
+              rx="10" fill="#FFF3EB" stroke="#E8A020" strokeWidth="1.5"
+            />
+            <text x="14" y="26" className={styles.warnTitle} fill="#E8500A">
+              ⚠ Concentratierisico
+            </text>
+            <foreignObject x="14" y="32" width="296" height="74">
+              <div className={styles.warnBody}>
+                Grootste reseller: <strong>60% van omzet</strong> (was 70% in 2025).<br />
+                Doel: diversificeren naar meer resellers en directe eindklanten.
+              </div>
+            </foreignObject>
+          </g>
+
+          <filter id="mensys-shadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#003087" floodOpacity="0.25" />
+          </filter>
+        </svg>
+
+        {tooltip && (
+          <div
+            className={styles.floatTooltip}
+            style={{ left: tooltip.x + 8, top: tooltip.y + 8 }}
+          >
+            {tooltip.text}
           </div>
         )}
       </div>
-
-      <Modal
-        open={configOpen}
-        title="Ecosysteem configuratie"
-        onClose={() => setConfigOpen(false)}
-        size="md"
-      >
-        <div className={styles.configForm}>
-          <div className={styles.configRow}>
-            <label>Hoeveel resellers tonen (max 50)</label>
-            <div className={styles.sliderRow}>
-              <input
-                type="range"
-                min="5"
-                max="50"
-                value={maxResellers}
-                onChange={(e) => setMaxResellers(Number(e.target.value))}
-              />
-              <span className={styles.sliderValue}>{maxResellers}</span>
-            </div>
-          </div>
-
-          <div className={styles.configRow}>
-            <label>Hoeveel inkopers tonen (max 30)</label>
-            <div className={styles.sliderRow}>
-              <input
-                type="range"
-                min="5"
-                max="30"
-                value={maxInkopers}
-                onChange={(e) => setMaxInkopers(Number(e.target.value))}
-              />
-              <span className={styles.sliderValue}>{maxInkopers}</span>
-            </div>
-          </div>
-
-          <div className={styles.configRow}>
-            <label>Filter op Mensys Fit</label>
-            <div className={styles.fitChecks}>
-              {MENSYS_FIT_SCORES.map((s) => (
-                <label key={s} className={styles.checkLabel}>
-                  <input
-                    type="checkbox"
-                    checked={fitFilter[s] ?? true}
-                    onChange={(e) =>
-                      setFitFilter((prev) => ({ ...prev, [s]: e.target.checked }))
-                    }
-                  />
-                  <span>{s}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className={styles.configRow}>
-            <label className={styles.checkLabel}>
-              <input
-                type="checkbox"
-                checked={showDistributeurs}
-                onChange={(e) => setShowDistributeurs(e.target.checked)}
-              />
-              <span>Toon distributeurs</span>
-            </label>
-          </div>
-
-          <div className={styles.configFooter}>
-            <button type="button" className="btn btn-primary" onClick={() => setConfigOpen(false)}>
-              Sluiten
-            </button>
-          </div>
-        </div>
-      </Modal>
-
-      {detailSource === 'inkopers' && detail && (
-        <ContactDetailPanel
-          contact={detail}
-          onClose={() => { setDetail(null); setDetailSource(null); }}
-          onEdit={() => { setDetail(null); setDetailSource(null); }}
-          onDelete={handleInkoperDelete}
-          onStatusChange={handleInkoperStatusChange}
-        />
-      )}
-      {detailSource === 'resellers' && detail && (
-        <ResellerDetailPanel
-          reseller={detail}
-          onClose={() => { setDetail(null); setDetailSource(null); }}
-          onDelete={handleResellerDelete}
-          onSave={handleResellerSave}
-        />
-      )}
     </div>
-  );
-}
-
-function NodeG({ node, onHover, onClick, showLabel }) {
-  if (node.type === 'distributeur') {
-    const size = 42;
-    const half = size / 2;
-    return (
-      <g
-        className={styles.nodeDistrib}
-        onMouseEnter={() => onHover(node)}
-        onMouseLeave={() => onHover(null)}
-        onClick={() => onClick(node)}
-      >
-        <rect
-          x={node.x - half}
-          y={node.y - half}
-          width={size}
-          height={size}
-          rx="8"
-          ry="8"
-          fill={node.color}
-          stroke="#ffffff"
-          strokeWidth="2"
-          filter="url(#node-shadow)"
-        />
-        <text x={node.x} y={node.y + half + 14} textAnchor="middle" className={styles.distribLabel}>
-          {node.name}
-        </text>
-      </g>
-    );
-  }
-  const truncatedLabel = showLabel && node.name
-    ? (node.name.length > 12 ? node.name.slice(0, 11) + '…' : node.name)
-    : null;
-  return (
-    <g
-      className={styles.nodeInteractive}
-      onMouseEnter={() => onHover(node)}
-      onMouseLeave={() => onHover(null)}
-      onClick={() => onClick(node)}
-    >
-      <circle cx={node.x} cy={node.y} r={node.r} fill={node.color} stroke="#ffffff" strokeWidth="2" />
-      {truncatedLabel && (
-        <text
-          x={node.x}
-          y={node.y + node.r + 10}
-          textAnchor="middle"
-          className={styles.resellerLabel}
-        >
-          {truncatedLabel}
-        </text>
-      )}
-    </g>
   );
 }
