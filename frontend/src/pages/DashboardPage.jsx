@@ -7,6 +7,7 @@ import TodoLijst from '../components/Dashboard/TodoLijst.jsx';
 import TodoModal from '../components/Dashboard/TodoModal.jsx';
 import ActiviteitFeed from '../components/Dashboard/ActiviteitFeed.jsx';
 import WorkflowHandleiding from '../components/Dashboard/WorkflowHandleiding.jsx';
+import BackupWaarschuwingBanner from '../components/Backup/BackupWaarschuwingBanner.jsx';
 import ContactDetailPanel from '../components/ContactDetailPanel.jsx';
 import ResellerDetailPanel from '../components/ResellerDetailPanel.jsx';
 import ActiviteitEntry from '../components/ActiviteitenLog/ActiviteitEntry.jsx';
@@ -308,6 +309,8 @@ export default function DashboardPage({
           )}
         </div>
       </section>
+
+      <BackupWaarschuwingBanner />
 
       <section className={styles.heroRij}>
         <HeroTile

@@ -256,3 +256,5 @@ concurrent-categorie-tooltips, statistieken 4-koloms grid, help-popups.
 
 Fase B voltooid 2026-04-20: Home-dashboard met KPIs, to-dos,
 activiteit-feed.
+
+Fase C voltooid 2026-04-20: backup/restore via JSON, waarschuwingsbanner.

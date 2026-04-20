@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import Modal from './Modal.jsx';
+import BackupSectie from './Backup/BackupSectie.jsx';
 import { AFSLUITER_OPTIES, DEFAULT_DOELEN, DEFAULT_INSTELLINGEN } from '../utils/instellingen.js';
 import styles from './InstellingenModal.module.css';
 
@@ -70,6 +71,8 @@ export default function InstellingenModal({ open, instellingen, onClose, onSave 
   return (
     <Modal open={open} title="Instellingen" onClose={onClose} size="md">
       <form className={styles.form} onSubmit={handleSubmit}>
+        <BackupSectie />
+
         <label className={styles.field}>
           <span className={styles.label}>Bedrijfsnaam</span>
           <input
