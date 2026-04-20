@@ -11,12 +11,23 @@ export const AFSLUITER_OPTIES = [
   { key: 'eigen', label: 'Eigen tekst...' },
 ];
 
+export const DEFAULT_DOELEN = {
+  invitesPerWerkdag: 40,
+  contactmomentenPerWeek: 175,
+  berichtenPerWeek: 100,
+  reactiesPerWeek: 20,
+  gesprekkenPerMaand: 10,
+  nieuweKlantenPerKwartaal: 5,
+  reactivatiesPerKwartaal: 10,
+};
+
 export const DEFAULT_INSTELLINGEN = {
   bedrijfsnaam: 'Mensys',
   propositie: 'Eén factuur, geen creditcard. Figma, Miro, ChatGPT Teams, Claude, Copilot, Canva: gewoon via ons geregeld.',
   gebruikersnaam: '',
   logoKleur: '#003087',
   openerAfsluiter: { keuze: 'herkenbaar', eigen: '' },
+  doelen: { ...DEFAULT_DOELEN },
 };
 
 function mergeAfsluiter(raw) {
@@ -27,18 +38,34 @@ function mergeAfsluiter(raw) {
   return base;
 }
 
+function coerceGetal(waarde, fallback) {
+  const n = Number(waarde);
+  if (!Number.isFinite(n) || n < 0) return fallback;
+  return Math.round(n);
+}
+
+function mergeDoelen(raw) {
+  const base = { ...DEFAULT_DOELEN };
+  if (!raw || typeof raw !== 'object') return base;
+  for (const key of Object.keys(DEFAULT_DOELEN)) {
+    base[key] = coerceGetal(raw[key], DEFAULT_DOELEN[key]);
+  }
+  return base;
+}
+
 export function loadInstellingen() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { ...DEFAULT_INSTELLINGEN };
+    if (!raw) return { ...DEFAULT_INSTELLINGEN, doelen: { ...DEFAULT_DOELEN } };
     const parsed = JSON.parse(raw);
     return {
       ...DEFAULT_INSTELLINGEN,
       ...parsed,
       openerAfsluiter: mergeAfsluiter(parsed.openerAfsluiter),
+      doelen: mergeDoelen(parsed.doelen),
     };
   } catch {
-    return { ...DEFAULT_INSTELLINGEN };
+    return { ...DEFAULT_INSTELLINGEN, doelen: { ...DEFAULT_DOELEN } };
   }
 }
 
@@ -48,11 +75,12 @@ export function saveInstellingen(values) {
       ...DEFAULT_INSTELLINGEN,
       ...values,
       openerAfsluiter: mergeAfsluiter(values.openerAfsluiter),
+      doelen: mergeDoelen(values.doelen),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
     return merged;
   } catch {
-    return { ...DEFAULT_INSTELLINGEN, ...values };
+    return { ...DEFAULT_INSTELLINGEN, ...values, doelen: mergeDoelen(values.doelen) };
   }
 }
 

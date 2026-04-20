@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import PropositionBanner from './components/PropositionBanner.jsx';
 import Tabs from './components/Tabs.jsx';
-import WelkomPage from './pages/WelkomPage.jsx';
+import DashboardPage from './pages/DashboardPage.jsx';
 import InkopersPage from './pages/InkopersPage.jsx';
 import ResellersPage from './pages/ResellersPage.jsx';
 import CeoPage from './pages/CeoPage.jsx';
@@ -21,7 +21,7 @@ export default function App() {
   const [contacts, setContactsState] = useState(() => loadContacts());
   const [resellers, setResellersState] = useState(() => getResellers());
   const [ceos, setCeosState] = useState(() => getCeos());
-  const [activeTab, setActiveTab] = useState('welkom');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [inkopersFilteredCount, setInkopersFilteredCount] = useState(null);
   const [resellersFilteredCount, setResellersFilteredCount] = useState(null);
   const [ceoFilteredCount, setCeoFilteredCount] = useState(null);
@@ -46,6 +46,18 @@ export default function App() {
     setActiveTab('resellers');
   }
 
+  function handleNavigate(tab, filter) {
+    if (tab === 'inkopers' && filter) {
+      navigateToInkopers(filter);
+      return;
+    }
+    if (tab === 'resellers' && filter) {
+      navigateToResellers(filter);
+      return;
+    }
+    setActiveTab(tab);
+  }
+
   useEffect(() => {
     saveContacts(contacts);
   }, [contacts]);
@@ -59,7 +71,7 @@ export default function App() {
   }, [ceos]);
 
   const tabs = [
-    { id: 'welkom', label: 'Welkom' },
+    { id: 'dashboard', label: 'Dashboard' },
     { id: 'signalen', label: 'Signalen' },
     { id: 'inkopers', label: 'Inkopers', count: inkopersFilteredCount ?? contacts.length },
     { id: 'resellers', label: 'Resellers', count: resellersFilteredCount ?? resellers.length },
@@ -76,14 +88,17 @@ export default function App() {
       <Tabs tabs={tabs} active={activeTab} onChange={setActiveTab} />
 
       <main className={styles.main}>
-        {activeTab === 'welkom' && (
-          <WelkomPage
-            contactCount={contacts.length}
-            resellerCount={resellers.length}
-            onStart={() => setActiveTab('inkopers')}
-            onNavigate={setActiveTab}
-            onOpenSettings={() => setInstellingenOpen(true)}
+        {activeTab === 'dashboard' && (
+          <DashboardPage
+            contacts={contacts}
+            setContacts={setContactsState}
+            resellers={resellers}
+            setResellers={setResellersState}
+            ceos={ceos}
+            setCeos={setCeosState}
             instellingen={instellingen}
+            onOpenSettings={() => setInstellingenOpen(true)}
+            onNavigate={handleNavigate}
           />
         )}
         {activeTab === 'inkopers' && (

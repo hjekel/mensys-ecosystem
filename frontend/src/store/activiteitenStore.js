@@ -6,6 +6,32 @@ import { generateId } from '../utils/storage.js';
 const STORAGE_KEY = 'mensys_activiteiten';
 const MAX_ITEMS = 10000;
 
+let versie = 0;
+const subscribers = new Set();
+
+export function getVersie() {
+  return versie;
+}
+
+export function subscribe(cb) {
+  if (typeof cb !== 'function') return () => {};
+  subscribers.add(cb);
+  return () => {
+    subscribers.delete(cb);
+  };
+}
+
+function notify() {
+  versie += 1;
+  for (const cb of subscribers) {
+    try {
+      cb(versie);
+    } catch (err) {
+      console.error('activiteitenStore subscriber fout', err);
+    }
+  }
+}
+
 export function loadActiviteiten() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -57,6 +83,7 @@ export function voegActiviteitToe(activiteit) {
   };
   const current = loadActiviteiten();
   const next = saveActiviteiten([...current, record]);
+  notify();
   return { record, all: next };
 }
 
@@ -64,6 +91,7 @@ export function verwijderActiviteit(id) {
   const current = loadActiviteiten();
   const next = current.filter((a) => a.id !== id);
   saveActiviteiten(next);
+  notify();
   return next;
 }
 
@@ -71,7 +99,17 @@ export function updateActiviteit(id, wijzigingen) {
   const current = loadActiviteiten();
   const next = current.map((a) => (a.id === id ? { ...a, ...wijzigingen } : a));
   saveActiviteiten(next);
+  notify();
   return next;
+}
+
+export function getAlleActiviteiten(limiet) {
+  const all = loadActiviteiten();
+  const sorted = sortByDatumDesc(all);
+  if (typeof limiet === 'number' && limiet > 0) {
+    return sorted.slice(0, limiet);
+  }
+  return sorted;
 }
 
 export function getActiviteitenVoorContact(contactId, contactType) {

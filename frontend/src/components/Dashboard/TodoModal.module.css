@@ -1,0 +1,151 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.textarea {
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.prioRij {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.prioBtn {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.prioBtn:hover {
+  background: #F9FAFB;
+}
+
+.prioBtnActief {
+  color: var(--color-white);
+  border-color: transparent;
+}
+
+.prio_hoog.prioBtnActief { background: #DC2626; }
+.prio_midden.prioBtnActief { background: #E8A020; }
+.prio_laag.prioBtnActief { background: #6B7280; }
+
+.gekoppeldRij {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+
+.gekoppeldTekst {
+  flex: 1;
+  color: var(--color-text);
+}
+
+.linkBtn {
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s, background 0.15s;
+}
+
+.linkBtn:hover {
+  color: var(--color-danger);
+  background: var(--color-white);
+}
+
+.zoekWrap {
+  position: relative;
+}
+
+.zoekLijst {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 4px;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  max-height: 220px;
+  overflow-y: auto;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+
+.zoekItem {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+  background: transparent;
+  text-align: left;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.zoekItem:hover {
+  background: #F9FAFB;
+}
+
+.zoekNaam {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.zoekMeta {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+
+.footerRechts {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}

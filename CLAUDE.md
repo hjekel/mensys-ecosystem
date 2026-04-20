@@ -253,3 +253,6 @@ npm start        # start backend
 Fase A voltooid 2026-04-20: rebrand Mensys' EcoSystem, lijst-default,
 UTF-8 dispatch fix, opener Modus 1 en 2, Rolodex persoonlijke context,
 concurrent-categorie-tooltips, statistieken 4-koloms grid, help-popups.
+
+Fase B voltooid 2026-04-20: Home-dashboard met KPIs, to-dos,
+activiteit-feed.

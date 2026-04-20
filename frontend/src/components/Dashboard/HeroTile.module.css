@@ -1,0 +1,79 @@
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 20px 22px;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+  width: 100%;
+  min-height: 130px;
+}
+
+.tileClickable {
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.08s, box-shadow 0.15s, background 0.15s;
+}
+
+.tileClickable:hover {
+  background: #F9FAFB;
+  border-color: var(--color-blue);
+  box-shadow: var(--shadow-md);
+}
+
+.tileClickable:active {
+  transform: translateY(1px);
+}
+
+.tileClickable:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 48, 135, 0.18);
+}
+
+.waardeRij {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.waarde {
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--color-blue);
+  line-height: 1.1;
+}
+
+.eenheid {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-blue);
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.subLabel {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  min-height: 15px;
+}
+
+.track {
+  margin-top: 6px;
+  background: var(--color-bg);
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease-out;
+  min-width: 0;
+}

@@ -1,7 +1,33 @@
 import { useEffect, useState } from 'react';
 import Modal from './Modal.jsx';
-import { AFSLUITER_OPTIES, DEFAULT_INSTELLINGEN } from '../utils/instellingen.js';
+import { AFSLUITER_OPTIES, DEFAULT_DOELEN, DEFAULT_INSTELLINGEN } from '../utils/instellingen.js';
 import styles from './InstellingenModal.module.css';
+
+const DOEL_VELDEN = [
+  { key: 'invitesPerWerkdag', label: 'Invites per werkdag' },
+  { key: 'contactmomentenPerWeek', label: 'Contactmomenten per week' },
+  { key: 'berichtenPerWeek', label: 'Berichten per week' },
+  { key: 'reactiesPerWeek', label: 'Reacties per week' },
+  { key: 'gesprekkenPerMaand', label: 'Gesprekken per maand' },
+  { key: 'nieuweKlantenPerKwartaal', label: 'Nieuwe klanten per kwartaal' },
+  { key: 'reactivatiesPerKwartaal', label: 'Reactivaties per kwartaal' },
+];
+
+function DoelenInfoIcoon() {
+  return (
+    <span
+      className={styles.infoIcoon}
+      title="Deze doelen bepalen de vergelijking op de hero-tiles van het Dashboard. Pas ze aan naar jouw werkritme."
+      aria-label="Uitleg doelen"
+    >
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="16" x2="12" y2="12" strokeLinecap="round" />
+        <line x1="12" y1="8" x2="12.01" y2="8" strokeLinecap="round" />
+      </svg>
+    </span>
+  );
+}
 
 export default function InstellingenModal({ open, instellingen, onClose, onSave }) {
   const [form, setForm] = useState(instellingen || DEFAULT_INSTELLINGEN);
@@ -21,6 +47,13 @@ export default function InstellingenModal({ open, instellingen, onClose, onSave 
     });
   }
 
+  function updateDoel(key, waarde) {
+    setForm((f) => {
+      const huidig = f.doelen || DEFAULT_DOELEN;
+      return { ...f, doelen: { ...huidig, [key]: waarde } };
+    });
+  }
+
   function handleSubmit(e) {
     e.preventDefault();
     onSave(form);
@@ -32,6 +65,7 @@ export default function InstellingenModal({ open, instellingen, onClose, onSave 
 
   const afsluiter = form.openerAfsluiter || DEFAULT_INSTELLINGEN.openerAfsluiter;
   const toonEigenTekstveld = afsluiter.keuze === 'eigen';
+  const doelen = form.doelen || DEFAULT_DOELEN;
 
   return (
     <Modal open={open} title="Instellingen" onClose={onClose} size="md">
@@ -123,6 +157,28 @@ export default function InstellingenModal({ open, instellingen, onClose, onSave 
             />
           </label>
         )}
+
+        <div className={styles.sectionDivider}>
+          <span className={styles.sectionTitle}>Doelen</span>
+          <DoelenInfoIcoon />
+        </div>
+
+        <div className={styles.doelenGrid}>
+          {DOEL_VELDEN.map((veld) => (
+            <label key={veld.key} className={styles.field}>
+              <span className={styles.label}>{veld.label}</span>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                className="input"
+                value={doelen[veld.key]}
+                onChange={(e) => updateDoel(veld.key, e.target.value)}
+                placeholder={String(DEFAULT_DOELEN[veld.key])}
+              />
+            </label>
+          ))}
+        </div>
 
         <div className={styles.footer}>
           <button type="button" className="btn btn-ghost" onClick={resetDefaults}>
