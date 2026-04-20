@@ -49,6 +49,33 @@
   min-width: 150px;
 }
 
+.btnDelen {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  background: #00a878;
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btnDelen:hover {
+  background: #008761;
+}
+
+.btnDelen:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 168, 120, 0.25);
+}
+
+.scheidslijn {
+  height: 1px;
+  background: var(--color-border);
+  margin: 4px 0;
+}
+
 .hiddenInput {
   display: none;
 }

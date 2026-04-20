@@ -136,6 +136,45 @@
   color: #7c2d12;
 }
 
+.voorDelenBanner {
+  padding: 10px 14px;
+  background: #E8EEF7;
+  border: 1px solid #c9d4ea;
+  border-left: 4px solid #003087;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--color-text);
+  line-height: 1.5;
+}
+
+.voorDelenBanner strong {
+  color: var(--color-blue);
+  font-weight: 700;
+}
+
+.categorieItem {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.categorieRijDisabled {
+  color: var(--color-text-secondary);
+  cursor: not-allowed;
+}
+
+.categorieRijDisabled input[type="checkbox"] {
+  cursor: not-allowed;
+}
+
+.apiKeyHint {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  font-style: italic;
+  padding-left: 22px;
+  line-height: 1.4;
+}
+
 .destructief {
   padding: 10px 14px;
   background: #fef2f2;

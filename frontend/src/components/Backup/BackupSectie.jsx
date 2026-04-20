@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import {
   exporteerBackup,
+  exporteerVoorDelen,
   getLaatsteBackupDatum,
   parseBackupBestand,
   valideerBackup,
@@ -56,6 +57,19 @@ export default function BackupSectie() {
     }
   }
 
+  function handleExportVoorDelen() {
+    try {
+      const rapport = exporteerVoorDelen();
+      const extra = rapport.overgeslagen.length > 0
+        ? ` (${rapport.overgeslagen.length} key(s) overgeslagen)`
+        : '';
+      toonMelding(`Deelbare backup geexporteerd: ${rapport.bestandsnaam}${extra}`);
+    } catch (err) {
+      console.error(err);
+      toonFout(`Export voor delen faalde: ${err?.message || err}`);
+    }
+  }
+
   function kiesBestand() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -93,8 +107,7 @@ export default function BackupSectie() {
       </div>
 
       <p className={styles.uitleg}>
-        Exporteer al je data (contacten, activiteiten, to-do&apos;s, instellingen) als JSON-bestand.
-        Bewaar dit op een veilige plek. Importeer hetzelfde bestand op een andere laptop of na het wissen van je browser.
+        Backup: volledige data inclusief API-key en voorkeuren. Voor delen: zonder API-key, zonder naam, zonder UI-voorkeuren.
       </p>
 
       <div className={styles.laatste}>
@@ -104,6 +117,13 @@ export default function BackupSectie() {
       <div className={styles.knoppen}>
         <button type="button" className={`btn btn-primary ${styles.btn}`} onClick={handleExport}>
           Export backup
+        </button>
+        <button
+          type="button"
+          className={`${styles.btn} ${styles.btnDelen}`}
+          onClick={handleExportVoorDelen}
+        >
+          Export voor delen
         </button>
         <button type="button" className={`btn btn-ghost ${styles.btn}`} onClick={kiesBestand}>
           Import backup
@@ -117,8 +137,10 @@ export default function BackupSectie() {
         />
       </div>
 
+      <div className={styles.scheidslijn} aria-hidden="true" />
+
       <p className={styles.waarschuwing}>
-        Let op: de backup bevat je Anthropic API-key als je die hebt ingesteld. Deel dit bestand niet met anderen.
+        Volledige backup bevat je API-key en persoonlijke voorkeuren, alleen voor jezelf. Gebruik <strong>Export voor delen</strong> als je het bestand wilt doorsturen.
       </p>
 
       {melding && <div className={styles.melding}>{melding}</div>}

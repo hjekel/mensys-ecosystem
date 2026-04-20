@@ -258,3 +258,5 @@ Fase B voltooid 2026-04-20: Home-dashboard met KPIs, to-dos,
 activiteit-feed.
 
 Fase C voltooid 2026-04-20: backup/restore via JSON, waarschuwingsbanner.
+
+Fase C.1 voltooid 2026-04-21: export voor delen, API-key aparte checkbox.

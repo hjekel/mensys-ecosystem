@@ -35,6 +35,38 @@ export const BACKUP_KEY_PREFIXES = [
   'mensys_dagelijkse_checklist_',
 ];
 
+// Keys met persoonlijke of identiteit-gebonden data. Worden NIET
+// meegenomen bij "Export voor delen". mensys_instellingen staat hier
+// ook in omdat het een gebruikersnaam bevat, maar wordt bij een
+// deelbare export wel gesaneerd teruggezet (zie sanitizeInstellingen).
+export const GEVOELIGE_KEYS = [
+  'mensys_anthropic_api_key',
+  'mensys_instellingen',
+  'mensys_view_voorkeur',
+  'mensys_linkedin_tip_dismissed',
+  'mensys_backup_banner_dismissed_tot',
+  'mensys_laatste_backup',
+];
+
+export function getVeiligeKeys() {
+  return BACKUP_KEYS.filter((k) => !GEVOELIGE_KEYS.includes(k));
+}
+
+// Whitelist-aanpak: alleen expliciet genoemde velden komen mee in een
+// deelbare export. Alle andere velden (gebruikersnaam, bedrijfsnaam,
+// propositie, logoKleur, etc.) worden weggelaten. gebruikersnaam wordt
+// expliciet op leeg gezet zodat de ontvanger geen "Goedemorgen Henk"
+// ziet via de default-fallback.
+export function sanitizeInstellingen(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const veilig = {
+    gebruikersnaam: '',
+  };
+  if (raw.doelen !== undefined) veilig.doelen = raw.doelen;
+  if (raw.openerAfsluiter !== undefined) veilig.openerAfsluiter = raw.openerAfsluiter;
+  return veilig;
+}
+
 // Categorieen die de gebruiker kan aan- of uitvinken tijdens restore.
 // Elke categorie dekt een set keys. Resterende keys vallen onder 'overig'.
 export const RESTORE_CATEGORIEEN = [
@@ -70,7 +102,7 @@ export const RESTORE_CATEGORIEEN = [
   },
   {
     key: 'overig',
-    label: 'Overige (concurrenten, distributeurs, signalen, view-voorkeur, checklist, API-key, banner-status)',
+    label: 'Overige (concurrenten, distributeurs, klantsignalen, signalen-cache, view-voorkeur, checklist, tip-dismiss, banner-status)',
     keys: [
       'mensys_distributeurs',
       'mensys_concurrenten',
@@ -79,14 +111,23 @@ export const RESTORE_CATEGORIEEN = [
       'mensys_signalen',
       'mensys_signalen_lastFetch',
       'mensys_view_voorkeur',
-      'mensys_anthropic_api_key',
       'mensys_linkedin_tip_dismissed',
       'mensys_backup_banner_dismissed_tot',
       LAATSTE_BACKUP_KEY,
     ],
     prefixes: ['mensys_dagelijkse_checklist_'],
   },
+  {
+    key: 'apikey',
+    label: 'Anthropic API-key',
+    keys: ['mensys_anthropic_api_key'],
+    defaultUit: true,
+  },
 ];
+
+export const DEFAULT_GEKOZEN_CATEGORIEEN = RESTORE_CATEGORIEEN
+  .filter((c) => !c.defaultUit)
+  .map((c) => c.key);
 
 function vindPrefixKeys() {
   const gevonden = [];
@@ -197,6 +238,62 @@ export function exporteerBackup() {
   };
 }
 
+// Deelbare export: geen API-key, geen gebruikersnaam, geen UI-voorkeuren,
+// geen dagelijkse-checklist prefix-keys. Instellingen worden via whitelist
+// gesaneerd (doelen, openerAfsluiter + lege gebruikersnaam).
+// Update NIET mensys_laatste_backup (dit is een kopie om te delen, geen
+// eigen backup-moment).
+export function exporteerVoorDelen() {
+  const data = {};
+  const overgeslagen = [];
+
+  for (const key of getVeiligeKeys()) {
+    const res = leesEnParse(key);
+    if (!res.aanwezig) continue;
+    if (!res.ok) {
+      console.warn(`[backup-delen] skip ${key}: kon niet parsen`);
+      overgeslagen.push(key);
+      continue;
+    }
+    data[key] = res.waarde;
+  }
+
+  // Gesaneerde instellingen apart toevoegen (whitelist-velden).
+  try {
+    const rawInst = localStorage.getItem('mensys_instellingen');
+    if (rawInst !== null) {
+      const parsed = JSON.parse(rawInst);
+      const veilig = sanitizeInstellingen(parsed);
+      if (veilig) data.mensys_instellingen = veilig;
+    }
+  } catch (err) {
+    console.warn('[backup-delen] skip instellingen:', err);
+    overgeslagen.push('mensys_instellingen');
+  }
+
+  // Prefix-keys (dagelijkse checklist) worden bewust overgeslagen.
+
+  const exportedAt = nuIso();
+  const payload = {
+    version: CURRENT_VERSION,
+    exportedAt,
+    app: APP_ID,
+    type: 'voor-delen',
+    data,
+  };
+
+  const json = JSON.stringify(payload, null, 2);
+  const bestandsnaam = `mensys-backup-delen-${stempel(new Date())}.json`;
+  downloadJson(bestandsnaam, json);
+
+  return {
+    bestandsnaam,
+    exportedAt,
+    aantalKeys: Object.keys(data).length,
+    overgeslagen,
+  };
+}
+
 export function valideerBackup(payload) {
   const fouten = [];
   if (!payload || typeof payload !== 'object') {
@@ -233,6 +330,7 @@ export function analyseerBackup(payload) {
   return {
     exportedAt: payload?.exportedAt || null,
     version: Number(payload?.version) || 0,
+    type: payload?.type || 'volledig',
     aantalInkopers: telArrayItems(data.mensys_contacts) ?? 0,
     aantalCeos: telArrayItems(data.mensys_ceo) ?? 0,
     aantalResellers: telArrayItems(data.mensys_resellers) ?? 0,
@@ -311,6 +409,9 @@ function schrijfWaarde(key, waarde) {
 // Overschrijft localStorage met de geselecteerde categorieen uit de backup.
 // gekozenCategorieen is een array met keys uit RESTORE_CATEGORIEEN.
 // Retourneert een rapport. De aanroeper moet window.location.reload() doen.
+// Bij een voor-delen backup (payload.type === 'voor-delen') wordt de
+// prefix-purge overgeslagen (eigen dagelijkse-checklist blijft intact)
+// en wordt mensys_laatste_backup NIET overschreven.
 export function importeerBackup(payload, gekozenCategorieen) {
   const validatie = valideerBackup(payload);
   if (!validatie.geldig) {
@@ -318,14 +419,18 @@ export function importeerBackup(payload, gekozenCategorieen) {
   }
 
   const data = payload.data || {};
+  const isVoorDelen = payload.type === 'voor-delen';
   const actieveCategorieen = Array.isArray(gekozenCategorieen) && gekozenCategorieen.length > 0
     ? gekozenCategorieen
-    : RESTORE_CATEGORIEEN.map((c) => c.key);
+    : DEFAULT_GEKOZEN_CATEGORIEEN;
 
   const { vaste, prefixen } = keysVoorCategorieen(actieveCategorieen);
 
-  // Ruim eerst oude prefix-keys op voor deterministische restore.
-  verwijderMatchendePrefixKeys(prefixen);
+  // Bij een deelbare backup heeft de afzender geen prefix-keys gestuurd;
+  // we laten daarom de eigen dagelijkse checklist-keys met rust.
+  if (!isVoorDelen) {
+    verwijderMatchendePrefixKeys(prefixen);
+  }
 
   const geschreven = [];
   const beschadigd = [];
@@ -344,7 +449,9 @@ export function importeerBackup(payload, gekozenCategorieen) {
   }
 
   // Markeer import-tijdstip als laatste backup zodat banner weer rustig is.
-  if (actieveCategorieen.includes('overig')) {
+  // Niet bij voor-delen imports: dat is content van iemand anders, geen
+  // eigen backup-moment.
+  if (!isVoorDelen && actieveCategorieen.includes('overig')) {
     try {
       localStorage.setItem(
         LAATSTE_BACKUP_KEY,
@@ -355,7 +462,7 @@ export function importeerBackup(payload, gekozenCategorieen) {
     }
   }
 
-  return { success: true, validatie, beschadigd, geschreven };
+  return { success: true, validatie, beschadigd, geschreven, isVoorDelen };
 }
 
 export function getLaatsteBackupDatum() {
